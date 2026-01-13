@@ -46,6 +46,9 @@ public class Main extends ApplicationAdapter {
     private Music musicaFondo;
 
     private Sound sfxDisparo;
+
+    private Sound sfxExplosion;
+
     private float sfxVolume = 0.7f;
 
     private Texture laserVerde;
@@ -206,6 +209,8 @@ public class Main extends ApplicationAdapter {
         musicaFondo.play();
 
         sfxDisparo = Gdx.audio.newSound(Gdx.files.internal("sonido_disparo.ogg"));
+        sfxExplosion = Gdx.audio.newSound(Gdx.files.internal("explosion.ogg"));
+
 
         laserVerde = new Texture("laser_verde.png");
         bullets = new Array<>();
@@ -448,7 +453,14 @@ public class Main extends ApplicationAdapter {
                 Enemy e = eit.next();
                 if (b.bounds.overlaps(e.bounds)) {
                     addExplosionCentered(e.x + e.w / 2f, e.y + e.h / 2f, e.w * 1.25f);
+                    if (sfxExplosion != null) {
+                        float vol = 0.75f + MathUtils.random(0.15f);
+                        float pitch = 0.90f + MathUtils.random(0.20f);
+                        sfxExplosion.play(vol, pitch, 0f);
+                    }
+
                     eit.remove();
+
                     hit = true;
                     break;
                 }
@@ -467,6 +479,10 @@ public class Main extends ApplicationAdapter {
                     vibrateHit();
 
                     addExplosionCentered(x + shipW / 2f, y + shipH / 2f, shipW * 1.1f);
+                    if (sfxExplosion != null) {
+                        sfxExplosion.play(0.6f, 1.1f, 0f);
+                    }
+
 
                     if (playerHp <= 0) {
                         playerHp = 0;
@@ -474,8 +490,13 @@ public class Main extends ApplicationAdapter {
                         vibrateDeathPattern();
 
                         addExplosionCentered(x + shipW / 2f, y + shipH / 2f, shipW * 1.9f);
+                        if (sfxExplosion != null) {
+                            sfxExplosion.play(1.0f, 0.85f, 0f);
+                        }
+
                         state = GameState.GAME_OVER;
                         gameOverDelayTimer = 0f;
+
                     }
                     break;
                 }
@@ -637,5 +658,7 @@ public class Main extends ApplicationAdapter {
         if (sfxDisparo != null) sfxDisparo.dispose();
         if (musicaFondo != null) musicaFondo.dispose();
         if (vidaTex != null) vidaTex.dispose();
+        if (sfxExplosion != null) sfxExplosion.dispose();
+
     }
 }
