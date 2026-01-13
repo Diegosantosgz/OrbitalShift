@@ -19,11 +19,9 @@ import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.badlogic.gdx.utils.Timer;
 
-
 import java.util.Iterator;
 
 public class Main extends ApplicationAdapter {
-
 
     public static PlatformServices services;
 
@@ -47,17 +45,14 @@ public class Main extends ApplicationAdapter {
 
     private Music musicaFondo;
 
-    // SFX disparo
     private Sound sfxDisparo;
     private float sfxVolume = 0.7f;
 
-    // Láser verde jugador
     private Texture laserVerde;
     private Array<Bullet> bullets;
     private float shootCooldown = 0.15f;
     private float shootTimer = 0f;
 
-    // Enemigos + láser rojo
     private Texture enemyTex;
     private Texture laserRojo;
     private Array<Enemy> enemies;
@@ -65,32 +60,33 @@ public class Main extends ApplicationAdapter {
     private float enemySpawnTimer = 0f;
     private float enemySpawnDelay = 1.2f;
 
-    // Vida jugador + colisión
     private Rectangle playerBounds;
     private int playerHp = 3;
     private float invulnTimer = 0f;
     private static final float INVULN_TIME = 0.45f;
 
-    // Explosiones
-    private Texture explosionTex;              // assets/explosion.png
+    private Texture vidaTex;
+    private float vidaSize = 70f;
+    private float vidaPadding = 14f;
+    private float vidaMarginLeft = 24f;
+    private float vidaMarginTop = 24f;
+
+    private Texture explosionTex;
     private Array<Explosion> explosions;
 
-    // ===== GAME OVER UI =====
     private enum GameState { PLAYING, GAME_OVER }
     private GameState state = GameState.PLAYING;
 
-    private Texture whitePixel;     // textura 1x1 para panel/botones
+    private Texture whitePixel;
     private BitmapFont font;
     private GlyphLayout layout;
 
     private Rectangle btnRetry;
     private Rectangle btnExit;
 
-    // Un pelín de delay para que se vea la explosión final antes de salir el panel
     private float gameOverDelayTimer = 0f;
     private static final float GAME_OVER_DELAY = 0.35f;
 
-    // ===== CLASES =====
     private static class Explosion {
         float x, y;
         float size;
@@ -221,14 +217,14 @@ public class Main extends ApplicationAdapter {
 
         explosionTex = new Texture("explosion.png");
         explosions = new Array<>();
+        vidaTex = new Texture("vida.png");
 
         float shipW = xwing.getWidth() * scale;
         float shipH = xwing.getHeight() * scale;
         playerBounds = new Rectangle(x, y, shipW, shipH);
 
-        // ===== UI GAME OVER =====
         whitePixel = createWhitePixel();
-        font = new BitmapFont(); // luego podrás cambiar por font propio
+        font = new BitmapFont();
         layout = new GlyphLayout();
 
         float bw = 520f, bh = 120f;
@@ -255,6 +251,7 @@ public class Main extends ApplicationAdapter {
         float shootDelay = MathUtils.random(0.9f, 1.7f);
         enemies.add(new Enemy(spawnX, spawnY, eW, eH, shootDelay));
     }
+
     private void vibrateSafe(int ms) {
         try {
             if (services != null) services.vibrate(ms);
@@ -268,15 +265,11 @@ public class Main extends ApplicationAdapter {
     private void vibrateDeathPattern() {
         try {
             if (services != null) {
-                // golpe fuerte al morir
                 services.vibrate(450);
-                // patrón extra (queda guapo)
                 services.vibratePattern(new long[]{0, 80, 60, 160, 60, 240});
             }
         } catch (Throwable ignored) {}
     }
-
-
 
     private void addExplosionCentered(float centerX, float centerY, float size) {
         float exX = centerX - size / 2f;
@@ -285,11 +278,9 @@ public class Main extends ApplicationAdapter {
     }
 
     private void restartGame() {
-        // reset estado
         state = GameState.PLAYING;
         gameOverDelayTimer = 0f;
 
-        // reset jugador
         playerHp = 3;
         invulnTimer = 0f;
 
@@ -299,13 +290,11 @@ public class Main extends ApplicationAdapter {
         y = 200f;
         playerBounds.set(x, y, shipW, shipH);
 
-        // limpiar arrays
         bullets.clear();
         enemies.clear();
         enemyBullets.clear();
         explosions.clear();
 
-        // reset timers
         enemySpawnTimer = 0f;
         shootTimer = 0f;
     }
@@ -315,7 +304,6 @@ public class Main extends ApplicationAdapter {
         ScreenUtils.clear(0, 0, 0, 1);
         float delta = Gdx.graphics.getDeltaTime();
 
-        // ===== Parallax (siempre, incluso en game over) =====
         oMuy -= vMuy * delta;
         oLej -= vLej * delta;
         oCer -= vCer * delta;
@@ -330,7 +318,6 @@ public class Main extends ApplicationAdapter {
             updateGameOver(delta);
         }
 
-        // ===== Render =====
         camera.update();
         batch.setProjectionMatrix(camera.combined);
         batch.begin();
@@ -339,21 +326,14 @@ public class Main extends ApplicationAdapter {
         drawParallaxLayer(fondoLejano, oLej);
         drawParallaxLayer(fondoCercano, oCer);
 
-        // Enemigos
         for (Enemy e : enemies) batch.draw(enemyTex, e.x, e.y, e.w, e.h);
-
-        // Balas rojas
         for (EnemyBullet b : enemyBullets) batch.draw(laserRojo, b.x, b.y, b.width, b.height);
-
-        // Balas verdes
         for (Bullet b : bullets) batch.draw(laserVerde, b.x, b.y, b.width, b.height);
 
-        // Jugador (si está vivo)
         float shipW = xwing.getWidth() * scale;
         float shipH = xwing.getHeight() * scale;
         if (playerHp > 0) batch.draw(xwing, x, y, shipW, shipH);
 
-        // Explosiones
         for (Explosion ex : explosions) {
             float a = ex.alpha();
             float s = ex.scalePop();
@@ -372,7 +352,8 @@ public class Main extends ApplicationAdapter {
             batch.setColor(1f, 1f, 1f, 1f);
         }
 
-        // UI Game Over (por encima)
+        drawLivesUI();
+
         if (state == GameState.GAME_OVER && gameOverDelayTimer >= GAME_OVER_DELAY) {
             drawGameOverUI();
         }
@@ -381,7 +362,6 @@ public class Main extends ApplicationAdapter {
     }
 
     private void updatePlaying(float delta) {
-        // Movimiento jugador
         float dx = 0f, dy = 0f;
         if (Gdx.input.isPeripheralAvailable(Input.Peripheral.Accelerometer)) {
             dx = -Gdx.input.getAccelerometerX();
@@ -403,10 +383,8 @@ public class Main extends ApplicationAdapter {
         y = Math.max(0, Math.min(y, WORLD_HEIGHT - shipH));
         playerBounds.set(x, y, shipW, shipH);
 
-        // Invulnerabilidad
         if (invulnTimer > 0f) invulnTimer -= delta;
 
-        // Disparo verde
         shootTimer += delta;
         boolean shootPressed = Gdx.input.isKeyPressed(Input.Keys.SPACE) || Gdx.input.isTouched();
         if (shootPressed && shootTimer >= shootCooldown && playerHp > 0) {
@@ -425,21 +403,18 @@ public class Main extends ApplicationAdapter {
             sfxDisparo.play(sfxVolume);
         }
 
-        // Update balas verdes
         for (Iterator<Bullet> it = bullets.iterator(); it.hasNext(); ) {
             Bullet b = it.next();
             b.update(delta);
             if (b.y > WORLD_HEIGHT) it.remove();
         }
 
-        // Spawn enemigos
         enemySpawnTimer += delta;
         if (enemySpawnTimer >= enemySpawnDelay && playerHp > 0) {
             spawnEnemy();
             enemySpawnTimer = 0f;
         }
 
-        // Update enemigos + disparo rojo
         for (Iterator<Enemy> it = enemies.iterator(); it.hasNext(); ) {
             Enemy e = it.next();
             e.update(delta);
@@ -459,14 +434,12 @@ public class Main extends ApplicationAdapter {
             if (e.offScreen()) it.remove();
         }
 
-        // Update balas rojas
         for (Iterator<EnemyBullet> it = enemyBullets.iterator(); it.hasNext(); ) {
             EnemyBullet b = it.next();
             b.update(delta);
             if (b.offScreen()) it.remove();
         }
 
-        // Colisión verde vs enemigo
         for (Iterator<Bullet> bit = bullets.iterator(); bit.hasNext(); ) {
             Bullet b = bit.next();
             boolean hit = false;
@@ -483,7 +456,6 @@ public class Main extends ApplicationAdapter {
             if (hit) bit.remove();
         }
 
-        // Colisión rojo vs jugador
         if (playerHp > 0 && invulnTimer <= 0f) {
             for (Iterator<EnemyBullet> it = enemyBullets.iterator(); it.hasNext(); ) {
                 EnemyBullet b = it.next();
@@ -492,19 +464,15 @@ public class Main extends ApplicationAdapter {
                     playerHp--;
                     invulnTimer = INVULN_TIME;
 
-                    // 📳 Vibración al impacto
                     vibrateHit();
 
-                    // Explosión por impacto
                     addExplosionCentered(x + shipW / 2f, y + shipH / 2f, shipW * 1.1f);
 
                     if (playerHp <= 0) {
-                        playerHp = 0; // seguridad
+                        playerHp = 0;
 
-                        // 📳 Vibración fuerte al morir
                         vibrateDeathPattern();
 
-                        // Explosión final grande
                         addExplosionCentered(x + shipW / 2f, y + shipH / 2f, shipW * 1.9f);
                         state = GameState.GAME_OVER;
                         gameOverDelayTimer = 0f;
@@ -514,9 +482,6 @@ public class Main extends ApplicationAdapter {
             }
         }
 
-
-
-        // Update explosiones
         for (Iterator<Explosion> it = explosions.iterator(); it.hasNext(); ) {
             Explosion ex = it.next();
             ex.update(delta);
@@ -524,8 +489,27 @@ public class Main extends ApplicationAdapter {
         }
     }
 
+    private void drawLivesUI() {
+        if (vidaTex == null) return;
+
+        int maxLives = 3;
+        for (int i = 0; i < maxLives; i++) {
+            float drawX = vidaMarginLeft + i * (vidaSize + vidaPadding);
+            float drawY = WORLD_HEIGHT - vidaMarginTop - vidaSize;
+
+            if (i < playerHp) {
+                batch.setColor(1f, 1f, 1f, 1f);
+            } else {
+                batch.setColor(1f, 1f, 1f, 0.25f);
+            }
+
+            batch.draw(vidaTex, drawX, drawY, vidaSize, vidaSize);
+        }
+
+        batch.setColor(1f, 1f, 1f, 1f);
+    }
+
     private void updateGameOver(float delta) {
-        // deja el fondo y explosiones corriendo
         gameOverDelayTimer += delta;
 
         for (Iterator<Explosion> it = explosions.iterator(); it.hasNext(); ) {
@@ -534,15 +518,12 @@ public class Main extends ApplicationAdapter {
             if (ex.finished()) it.remove();
         }
 
-        // Si aún no mostramos la UI, no aceptamos clicks
         if (gameOverDelayTimer < GAME_OVER_DELAY) return;
 
-        // Touch / click
         if (Gdx.input.justTouched()) {
             float sx = Gdx.input.getX();
             float sy = Gdx.input.getY();
 
-            // Convertir coordenadas pantalla -> mundo
             float worldX = sx * (WORLD_WIDTH / Gdx.graphics.getWidth());
             float worldY = WORLD_HEIGHT - (sy * (WORLD_HEIGHT / Gdx.graphics.getHeight()));
 
@@ -553,18 +534,15 @@ public class Main extends ApplicationAdapter {
             }
         }
 
-        // Tecla ESC para salir (desktop)
         if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
             Gdx.app.exit();
         }
     }
 
     private void drawGameOverUI() {
-        // Fondo oscuro
         batch.setColor(0f, 0f, 0f, 0.65f);
         batch.draw(whitePixel, 0, 0, WORLD_WIDTH, WORLD_HEIGHT);
 
-        // Panel central
         float panelW = 820f;
         float panelH = 720f;
         float panelX = (WORLD_WIDTH - panelW) / 2f;
@@ -573,56 +551,44 @@ public class Main extends ApplicationAdapter {
         batch.setColor(0.08f, 0.08f, 0.10f, 0.90f);
         batch.draw(whitePixel, panelX, panelY, panelW, panelH);
 
-        // Línea arriba
         batch.setColor(1f, 0.2f, 0.2f, 0.90f);
         batch.draw(whitePixel, panelX, panelY + panelH - 10f, panelW, 10f);
 
-        // Título (MUCHO más grande)
         batch.setColor(1f, 1f, 1f, 1f);
         font.getData().setScale(7.0f);
         drawCenteredText("GAME OVER", WORLD_WIDTH / 2f, panelY + panelH - 140f);
 
-        // Subtítulo (más grande)
         font.getData().setScale(4.5f);
         drawCenteredText("Tu nave ha sido destruida", WORLD_WIDTH / 2f, panelY + panelH - 235f);
 
-        // Botones
         drawButton(btnRetry, "REINTENTAR", true);
         drawButton(btnExit, "SALIR", false);
 
-        // Hint (más grande)
         font.getData().setScale(2f);
         batch.setColor(1f, 1f, 1f, 0.75f);
         drawCenteredText("Pulsa un botón o ESC para salir", WORLD_WIDTH / 2f, panelY + 95f);
 
-        // Reset
         batch.setColor(1f, 1f, 1f, 1f);
         font.getData().setScale(1.0f);
     }
 
-
     private void drawButton(Rectangle r, String text, boolean primary) {
-        // Fondo botón
         if (primary) batch.setColor(0.15f, 0.65f, 1f, 0.85f);
         else batch.setColor(0.85f, 0.25f, 0.25f, 0.85f);
         batch.draw(whitePixel, r.x, r.y, r.width, r.height);
 
-        // Borde
         batch.setColor(0f, 0f, 0f, 0.25f);
         batch.draw(whitePixel, r.x, r.y, r.width, 6f);
         batch.draw(whitePixel, r.x, r.y + r.height - 6f, r.width, 6f);
         batch.draw(whitePixel, r.x, r.y, 6f, r.height);
         batch.draw(whitePixel, r.x + r.width - 6f, r.y, 6f, r.height);
 
-        // Texto (MUCHO más grande)
         batch.setColor(1f, 1f, 1f, 1f);
         font.getData().setScale(2.2f);
         drawCenteredText(text, r.x + r.width / 2f, r.y + r.height / 2f + 22f);
 
-        // Reset
         font.getData().setScale(1.0f);
     }
-
 
     private void drawCenteredText(String text, float centerX, float y) {
         layout.setText(font, text);
@@ -670,5 +636,6 @@ public class Main extends ApplicationAdapter {
 
         if (sfxDisparo != null) sfxDisparo.dispose();
         if (musicaFondo != null) musicaFondo.dispose();
+        if (vidaTex != null) vidaTex.dispose();
     }
 }
