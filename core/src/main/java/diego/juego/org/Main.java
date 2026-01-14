@@ -43,6 +43,12 @@ public class Main extends ApplicationAdapter {
     private float oMuy = 0, oLej = 0, oCer = 0;
     private float vMuy = 10f, vLej = 20f, vCer = 50f;
 
+    // ===== SCORE ANIM =====
+    private float scorePopTimer = 0f;
+    private static final float SCORE_POP_DURATION = 0.18f;
+    private float scoreScaleBase = 3.2f; // tu escala normal
+
+
     private Music musicaFondo;
 
     private Sound sfxDisparo;
@@ -83,6 +89,23 @@ public class Main extends ApplicationAdapter {
     private float vidaPadding = 14f;
     private float vidaMarginLeft = 24f;
     private float vidaMarginTop = 24f;
+
+    // ===== GRAVEDAD / AGUJERO NEGRO =====
+    private Texture fuerzaGravTex;
+
+    private float gravitySpawnTimer = 0f;
+    private float gravitySpawnDelay = 9f;      // cada cuantos segundos intenta salir (ajustable)
+    private float gravityDuration = 4.0f;      // cuanto dura en pantalla (ajustable)
+    private float gravityTimer = 0f;
+    private boolean gravityActive = false;
+
+    private float gravityX = 0f;
+    private float gravityY = 0f;
+
+    private float gravityStrength = 260f;      // fuerza en "pixeles/segundo" (ajustable)
+    private float gravitySideMargin = 60f;     // pegado al borde un poco
+    private float gravitySpriteSize = 220f;    // tamaño del sprite (ajustable)
+
 
 
     private Texture explosionTex;
@@ -212,6 +235,10 @@ public class Main extends ApplicationAdapter {
 
         scoreIcon = new Texture("estrella_record.png");
 
+        fuerzaGravTex = new Texture("fuerza_gravitacional.png");
+
+
+
 
         xwing = new Texture("x-wingHDCenital.png");
         x = WORLD_WIDTH / 2f - (xwing.getWidth() * scale) / 2f;
@@ -325,6 +352,14 @@ public class Main extends ApplicationAdapter {
 
         score = 0;
 
+        gravitySpawnTimer = 0f;
+        gravityTimer = 0f;
+        gravityActive = false;
+        gravityX = 0f;
+        gravityY = 0f;
+
+
+
     }
 
     @Override
@@ -350,9 +385,21 @@ public class Main extends ApplicationAdapter {
         batch.setProjectionMatrix(camera.combined);
         batch.begin();
 
+
         drawParallaxLayer(fondoMuyLejano, oMuy);
         drawParallaxLayer(fondoLejano, oLej);
         drawParallaxLayer(fondoCercano, oCer);
+
+        if (gravityActive && fuerzaGravTex != null) {
+            batch.draw(
+                fuerzaGravTex,
+                gravityX,
+                gravityY,
+                gravitySpriteSize,
+                gravitySpriteSize
+            );
+        }
+
 
         for (Enemy e : enemies) batch.draw(enemyTex, e.x, e.y, e.w, e.h);
         for (EnemyBullet b : enemyBullets) batch.draw(laserRojo, b.x, b.y, b.width, b.height);
@@ -406,6 +453,23 @@ public class Main extends ApplicationAdapter {
         x += dx * speed * delta;
         y += dy * speed * delta;
 
+        // ===== GRAVEDAD: arrastre lateral =====
+        if (gravityActive && playerHp > 0) {
+
+            float shipW = xwing.getWidth() * scale;
+
+            float holeCenterX = gravityX + gravitySpriteSize / 2f;
+            float shipCenterX = x + shipW / 2f;
+
+            float dir = Math.signum(holeCenterX - shipCenterX);
+
+            float dist = Math.abs(holeCenterX - shipCenterX);
+            float normalized = MathUtils.clamp(1f - (dist / 700f), 0.2f, 1f);
+
+            x += dir * gravityStrength * normalized * delta;
+        }
+
+
         float shipW = xwing.getWidth() * scale;
         float shipH = xwing.getHeight() * scale;
 
@@ -440,6 +504,28 @@ public class Main extends ApplicationAdapter {
         }
 
         difficultyTimer += delta;
+
+        // ===== GRAVEDAD: spawn ocasional =====
+        gravitySpawnTimer += delta;
+
+        if (!gravityActive && gravitySpawnTimer >= gravitySpawnDelay && playerHp > 0) {
+            gravitySpawnTimer = 0f;
+
+            if (MathUtils.random() < 0.6f) {
+                spawnGravityWell();
+            }
+        }
+
+        if (gravityActive) {
+            gravityTimer -= delta;
+            if (gravityTimer <= 0f) {
+                gravityActive = false;
+            }
+        }
+
+
+        if (scorePopTimer > 0f) scorePopTimer -= delta;
+
 
 // 0 -> 1 según pasan los segundos
         float t = MathUtils.clamp(difficultyTimer / difficultyRampTime, 0f, 1f);
@@ -494,6 +580,7 @@ public class Main extends ApplicationAdapter {
                     }
 
                     score += 100;
+                    triggerScorePop();
 
 
                     eit.remove();
@@ -547,7 +634,12 @@ public class Main extends ApplicationAdapter {
         }
     }
     private void drawScoreUI() {
-        font.getData().setScale(3.2f);
+        float extra = 0f;
+        if (scorePopTimer > 0f) {
+            float t = scorePopTimer / SCORE_POP_DURATION;
+            extra = (float)Math.sin(t * Math.PI) * 0.9f;
+        }
+        font.getData().setScale(scoreScaleBase + extra);
 
         String text = String.valueOf(score);
         layout.setText(font, text);
@@ -560,13 +652,15 @@ public class Main extends ApplicationAdapter {
         float x = WORLD_WIDTH - totalWidth - 30f;
         float y = WORLD_HEIGHT - 40f;
 
-        // dibuja la estrella
         batch.draw(scoreIcon, x, y - iconSize + 10f, iconSize, iconSize);
-
-        // dibuja el texto a la derecha de la estrella
         font.draw(batch, layout, x + iconSize + padding, y);
 
         font.getData().setScale(1.0f);
+    }
+
+
+    private void triggerScorePop() {
+        scorePopTimer = SCORE_POP_DURATION;
     }
 
 
@@ -683,6 +777,19 @@ public class Main extends ApplicationAdapter {
         batch.draw(tex, 0, offsetY, WORLD_WIDTH, WORLD_HEIGHT);
         batch.draw(tex, 0, offsetY + WORLD_HEIGHT, WORLD_WIDTH, WORLD_HEIGHT);
     }
+    private void spawnGravityWell() {
+        gravityActive = true;
+        gravityTimer = gravityDuration;
+
+        // 50% izquierda / 50% derecha
+        boolean left = MathUtils.randomBoolean();
+
+        gravityX = left ? gravitySideMargin : (WORLD_WIDTH - gravitySideMargin - gravitySpriteSize);
+
+        // altura random por la zona media-alta (evita tapar UI y que sea injusto abajo)
+        gravityY = MathUtils.random(700f, WORLD_HEIGHT - 450f);
+    }
+
 
     @Override
     public void resize(int width, int height) {
@@ -721,6 +828,8 @@ public class Main extends ApplicationAdapter {
         if (vidaTex != null) vidaTex.dispose();
         if (sfxExplosion != null) sfxExplosion.dispose();
         if (scoreIcon != null) scoreIcon.dispose();
+        if (fuerzaGravTex != null) fuerzaGravTex.dispose();
+
 
 
     }
