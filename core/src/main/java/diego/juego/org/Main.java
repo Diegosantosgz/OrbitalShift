@@ -25,6 +25,9 @@ public class Main extends ApplicationAdapter {
 
 
 
+    // Menu
+    private Rectangle btnPlay, btnOptions, btnCredits, btnHelp, btnQuit;
+
     public static PlatformServices services;
 
     private SpriteBatch batch;
@@ -165,8 +168,8 @@ public class Main extends ApplicationAdapter {
     private Texture explosionTex;
     private Array<Explosion> explosions;
 
-    private enum GameState { PLAYING, GAME_OVER }
-    private GameState state = GameState.PLAYING;
+    private enum GameState { MENU, PLAYING, OPTIONS, CREDITS, HELP, GAME_OVER }
+    private GameState state = GameState.MENU;
 
     private Texture whitePixel;
     private BitmapFont font;
@@ -302,8 +305,6 @@ public class Main extends ApplicationAdapter {
 
 
 
-
-
         xwing = new Texture("x-wingHDCenital.png");
         x = WORLD_WIDTH / 2f - (xwing.getWidth() * scale) / 2f;
         y = 200f;
@@ -340,9 +341,24 @@ public class Main extends ApplicationAdapter {
         font = new BitmapFont();
         layout = new GlyphLayout();
 
-        float bw = 520f, bh = 120f;
-        btnRetry = new Rectangle((WORLD_WIDTH - bw) / 2f, 700f, bw, bh);
-        btnExit  = new Rectangle((WORLD_WIDTH - bw) / 2f, 540f, bw, bh);
+        float bw = 620f, bh = 120f;
+        float startY = 1080f;     // ajusta si quieres más arriba/abajo
+        float gap = 26f;
+
+        float x0 = (WORLD_WIDTH - bw) / 2f;
+
+        btnPlay    = new Rectangle(x0, startY,                bw, bh);
+        btnOptions = new Rectangle(x0, startY - (bh+gap)*1f,  bw, bh);
+        btnCredits = new Rectangle(x0, startY - (bh+gap)*2f,  bw, bh);
+        btnHelp    = new Rectangle(x0, startY - (bh+gap)*3f,  bw, bh);
+        btnQuit    = new Rectangle(x0, startY - (bh+gap)*4f,  bw, bh);
+
+
+
+        float bwGO = 520f, bhGO = 120f;
+        btnRetry = new Rectangle((WORLD_WIDTH - bwGO) / 2f, 700f, bwGO, bhGO);
+        btnExit  = new Rectangle((WORLD_WIDTH - bwGO) / 2f, 540f, bwGO, bhGO);
+
 
         enemySpawnDelay = enemySpawnDelayStart;
         difficultyTimer = 0f;
@@ -441,10 +457,6 @@ public class Main extends ApplicationAdapter {
         hpItemY = 0f;
 
 
-
-
-
-
     }
 
     @Override
@@ -462,9 +474,13 @@ public class Main extends ApplicationAdapter {
 
         if (state == GameState.PLAYING) {
             updatePlaying(delta);
-        } else {
+        } else if (state == GameState.GAME_OVER) {
             updateGameOver(delta);
+        } else {
+            updateMenuScreens(delta); // MENU / OPTIONS / CREDITS / HELP
         }
+
+
 
         camera.update();
         batch.setProjectionMatrix(camera.combined);
@@ -474,6 +490,29 @@ public class Main extends ApplicationAdapter {
         drawParallaxLayer(fondoMuyLejano, oMuy);
         drawParallaxLayer(fondoLejano, oLej);
         drawParallaxLayer(fondoCercano, oCer);
+
+        // ===== MENÚ / PANTALLAS =====
+        if (state == GameState.MENU) {
+            drawMenu();
+            batch.end();
+            return;
+        }
+        if (state == GameState.OPTIONS) {
+            drawSimpleScreen("OPCIONES", "Aquí pondremos volumen y sensibilidad\nToca para volver");
+            batch.end();
+            return;
+        }
+        if (state == GameState.CREDITS) {
+            drawSimpleScreen("CRÉDITOS", "Hecho por Diego\nToca para volver");
+            batch.end();
+            return;
+        }
+        if (state == GameState.HELP) {
+            drawSimpleScreen("AYUDA", "Inclina el móvil para moverte\nToca para disparar\nToca para volver");
+            batch.end();
+            return;
+        }
+
 
         // ===== ITEM ESCUDO =====
         if (shieldVisible && shieldBounds != null) {
@@ -710,7 +749,7 @@ public class Main extends ApplicationAdapter {
                 spawnHpItem();
             }
         }
-        if (hpItemVisible & hpItemBounds != null) {
+        if (hpItemVisible && hpItemBounds != null) {
             hpItemY -= hpItemSpeed * delta;
             hpItemBounds.setPosition(hpItemX, hpItemY);
 
@@ -908,7 +947,6 @@ public class Main extends ApplicationAdapter {
     }
 
 
-
     private void drawLivesUI() {
         if (vidaTex == null) return;
 
@@ -928,6 +966,93 @@ public class Main extends ApplicationAdapter {
 
         batch.setColor(1f, 1f, 1f, 1f);
     }
+    private void updateMenuScreens(float delta) {
+
+        // BACK / ESC siempre funciona aunque NO haya touch
+        if (Gdx.input.isKeyJustPressed(Input.Keys.BACK) || Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
+            if (state == GameState.MENU) {
+                Gdx.app.exit();
+            } else if (state != GameState.PLAYING) {
+                state = GameState.MENU;
+            }
+            return;
+        }
+
+        // Si no hay toque, no hacemos nada más
+        if (!Gdx.input.justTouched()) return;
+
+        float sx = Gdx.input.getX();
+        float sy = Gdx.input.getY();
+
+        float worldX = sx * (WORLD_WIDTH / Gdx.graphics.getWidth());
+        float worldY = WORLD_HEIGHT - (sy * (WORLD_HEIGHT / Gdx.graphics.getHeight()));
+
+        if (state == GameState.MENU) {
+            if (btnPlay.contains(worldX, worldY)) {
+                restartGame();
+                state = GameState.PLAYING;
+                return;
+            }
+            if (btnOptions.contains(worldX, worldY)) { state = GameState.OPTIONS; return; }
+            if (btnCredits.contains(worldX, worldY)) { state = GameState.CREDITS; return; }
+            if (btnHelp.contains(worldX, worldY))    { state = GameState.HELP; return; }
+            if (btnQuit.contains(worldX, worldY))    { Gdx.app.exit(); return; }
+        } else {
+            // En OPTIONS / CREDITS / HELP: tocar en cualquier sitio vuelve al menú
+            state = GameState.MENU;
+        }
+    }
+
+
+    private void drawMenu() {
+        // Fondo oscurecido encima del parallax
+        batch.setColor(0f, 0f, 0f, 0.55f);
+        batch.draw(whitePixel, 0, 0, WORLD_WIDTH, WORLD_HEIGHT);
+        batch.setColor(1f, 1f, 1f, 1f);
+
+        font.getData().setScale(7.0f);
+        drawCenteredText("ORBITAL SHIFT", WORLD_WIDTH / 2f, 1520f);
+
+        font.getData().setScale(2.2f);
+        drawMenuButton(btnPlay, "JUGAR");
+        drawMenuButton(btnOptions, "OPCIONES");
+        drawMenuButton(btnCredits, "CRÉDITOS");
+        drawMenuButton(btnHelp, "AYUDA");
+        drawMenuButton(btnQuit, "SALIR");
+
+        font.getData().setScale(1.0f);
+    }
+
+    private void drawMenuButton(Rectangle r, String text) {
+        batch.setColor(0.15f, 0.65f, 1f, 0.85f);
+        batch.draw(whitePixel, r.x, r.y, r.width, r.height);
+
+        batch.setColor(0f, 0f, 0f, 0.25f);
+        batch.draw(whitePixel, r.x, r.y, r.width, 6f);
+        batch.draw(whitePixel, r.x, r.y + r.height - 6f, r.width, 6f);
+
+        batch.setColor(1f, 1f, 1f, 1f);
+        drawCenteredText(text, r.x + r.width / 2f, r.y + r.height / 2f + 22f);
+    }
+
+    private void drawSimpleScreen(String title, String body) {
+        batch.setColor(0f, 0f, 0f, 0.65f);
+        batch.draw(whitePixel, 0, 0, WORLD_WIDTH, WORLD_HEIGHT);
+        batch.setColor(1f, 1f, 1f, 1f);
+
+        font.getData().setScale(6.0f);
+        drawCenteredText(title, WORLD_WIDTH / 2f, 1450f);
+
+        font.getData().setScale(2.4f);
+        drawCenteredText(body, WORLD_WIDTH / 2f, 1150f);
+
+        font.getData().setScale(1.8f);
+        drawCenteredText("Toca para volver", WORLD_WIDTH / 2f, 300f);
+
+        font.getData().setScale(1.0f);
+    }
+
+
 
     private void updateGameOver(float delta) {
         gameOverDelayTimer += delta;
@@ -1083,8 +1208,6 @@ public class Main extends ApplicationAdapter {
         if (sfxEscudo != null) sfxEscudo.dispose();
         if (sfxRomperEscudo != null) sfxRomperEscudo.dispose();
         if (sfxCuracion != null) sfxCuracion.dispose();
-
-
 
     }
 }
