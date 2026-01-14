@@ -49,7 +49,7 @@ public class Main extends ApplicationAdapter {
 
     private Sound sfxExplosion;
 
-    private float sfxVolume = 0.7f;
+    private float sfxVolume = 0.1f;
 
     private Texture laserVerde;
     private Array<Bullet> bullets;
@@ -58,13 +58,23 @@ public class Main extends ApplicationAdapter {
 
     private Texture enemyTex;
     private Texture laserRojo;
+    private Texture scoreIcon;
+
     private Array<Enemy> enemies;
     private Array<EnemyBullet> enemyBullets;
     private float enemySpawnTimer = 0f;
     private float enemySpawnDelay = 1.2f;
+    private float difficultyTimer = 0f;
+
+    // delay dinámico (empieza fácil)
+    private float enemySpawnDelayStart = 3.2f;   // al inicio (menos enemigos)
+    private float enemySpawnDelayMin   = 0.55f;  // límite (más difícil)
+    private float difficultyRampTime   = 90f;    // segundos para llegar al mínimo
+
 
     private Rectangle playerBounds;
     private int playerHp = 3;
+    private int score = 0;
     private float invulnTimer = 0f;
     private static final float INVULN_TIME = 0.45f;
 
@@ -73,6 +83,7 @@ public class Main extends ApplicationAdapter {
     private float vidaPadding = 14f;
     private float vidaMarginLeft = 24f;
     private float vidaMarginTop = 24f;
+
 
     private Texture explosionTex;
     private Array<Explosion> explosions;
@@ -199,13 +210,16 @@ public class Main extends ApplicationAdapter {
         fondoLejano = new Texture("fondo_lejano_nuevo.png");
         fondoCercano = new Texture("fondo_cercano_nuevo.png");
 
+        scoreIcon = new Texture("estrella_record.png");
+
+
         xwing = new Texture("x-wingHDCenital.png");
         x = WORLD_WIDTH / 2f - (xwing.getWidth() * scale) / 2f;
         y = 200f;
 
         musicaFondo = Gdx.audio.newMusic(Gdx.files.internal("musica_fondo.mp3"));
         musicaFondo.setLooping(true);
-        musicaFondo.setVolume(0.5f);
+        musicaFondo.setVolume(0.3f);
         musicaFondo.play();
 
         sfxDisparo = Gdx.audio.newSound(Gdx.files.internal("sonido_disparo.ogg"));
@@ -235,6 +249,9 @@ public class Main extends ApplicationAdapter {
         float bw = 520f, bh = 120f;
         btnRetry = new Rectangle((WORLD_WIDTH - bw) / 2f, 700f, bw, bh);
         btnExit  = new Rectangle((WORLD_WIDTH - bw) / 2f, 540f, bw, bh);
+
+        enemySpawnDelay = enemySpawnDelayStart;
+        difficultyTimer = 0f;
     }
 
     private Texture createWhitePixel() {
@@ -302,6 +319,12 @@ public class Main extends ApplicationAdapter {
 
         enemySpawnTimer = 0f;
         shootTimer = 0f;
+
+        enemySpawnDelay = enemySpawnDelayStart;
+        difficultyTimer = 0f;
+
+        score = 0;
+
     }
 
     @Override
@@ -358,6 +381,8 @@ public class Main extends ApplicationAdapter {
         }
 
         drawLivesUI();
+        drawScoreUI();
+
 
         if (state == GameState.GAME_OVER && gameOverDelayTimer >= GAME_OVER_DELAY) {
             drawGameOverUI();
@@ -414,6 +439,15 @@ public class Main extends ApplicationAdapter {
             if (b.y > WORLD_HEIGHT) it.remove();
         }
 
+        difficultyTimer += delta;
+
+// 0 -> 1 según pasan los segundos
+        float t = MathUtils.clamp(difficultyTimer / difficultyRampTime, 0f, 1f);
+
+// delay va bajando poco a poco
+        enemySpawnDelay = MathUtils.lerp(enemySpawnDelayStart, enemySpawnDelayMin, t);
+
+
         enemySpawnTimer += delta;
         if (enemySpawnTimer >= enemySpawnDelay && playerHp > 0) {
             spawnEnemy();
@@ -459,6 +493,9 @@ public class Main extends ApplicationAdapter {
                         sfxExplosion.play(vol, pitch, 0f);
                     }
 
+                    score += 100;
+
+
                     eit.remove();
 
                     hit = true;
@@ -480,7 +517,7 @@ public class Main extends ApplicationAdapter {
 
                     addExplosionCentered(x + shipW / 2f, y + shipH / 2f, shipW * 1.1f);
                     if (sfxExplosion != null) {
-                        sfxExplosion.play(0.6f, 1.1f, 0f);
+                        sfxExplosion.play(0.3f, 1.1f, 0f);
                     }
 
 
@@ -509,6 +546,30 @@ public class Main extends ApplicationAdapter {
             if (ex.finished()) it.remove();
         }
     }
+    private void drawScoreUI() {
+        font.getData().setScale(3.2f);
+
+        String text = String.valueOf(score);
+        layout.setText(font, text);
+
+        float padding = 20f;
+        float iconSize = 64f;
+
+        float totalWidth = iconSize + padding + layout.width;
+
+        float x = WORLD_WIDTH - totalWidth - 30f;
+        float y = WORLD_HEIGHT - 40f;
+
+        // dibuja la estrella
+        batch.draw(scoreIcon, x, y - iconSize + 10f, iconSize, iconSize);
+
+        // dibuja el texto a la derecha de la estrella
+        font.draw(batch, layout, x + iconSize + padding, y);
+
+        font.getData().setScale(1.0f);
+    }
+
+
 
     private void drawLivesUI() {
         if (vidaTex == null) return;
@@ -659,6 +720,8 @@ public class Main extends ApplicationAdapter {
         if (musicaFondo != null) musicaFondo.dispose();
         if (vidaTex != null) vidaTex.dispose();
         if (sfxExplosion != null) sfxExplosion.dispose();
+        if (scoreIcon != null) scoreIcon.dispose();
+
 
     }
 }
