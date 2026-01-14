@@ -55,9 +55,32 @@ public class Main extends ApplicationAdapter {
 
     private Sound sfxExplosion;
 
+    private Sound sfxGravedad;
+
+    private Sound sfxEscudo;
+
+
+
     private float sfxVolume = 0.1f;
 
     private Texture laserVerde;
+
+    // ===== ITEM ESCUDO =====
+    private Texture escudoItemTex;
+    private Texture naveEscudoTex;
+
+    private float shieldScaleMultiplier = 1.75f; // Tamaño de la nave con escudo
+
+
+    private boolean shieldActive = false;
+
+    private float shieldSpawnTimer = 0f;
+    private float shieldSpawnDelay = 14f; // cada cuantos segundos puede salir
+
+    private Rectangle shieldBounds;
+    private float shieldX, shieldY;
+    private float shieldSpeed = 180f;
+    private boolean shieldVisible = false;
     private Array<Bullet> bullets;
     private float shootCooldown = 0.15f;
     private float shootTimer = 0f;
@@ -102,9 +125,14 @@ public class Main extends ApplicationAdapter {
     private float gravityX = 0f;
     private float gravityY = 0f;
 
-    private float gravityStrength = 260f;      // fuerza en "pixeles/segundo" (ajustable)
+    private float gravityStrength = 300f;      // fuerza en "pixeles/segundo" (ajustable)
     private float gravitySideMargin = 60f;     // pegado al borde un poco
     private float gravitySpriteSize = 220f;    // tamaño del sprite (ajustable)
+
+    // ===== GRAVEDAD: ROTACIÓN =====
+    private float gravityRotation = 0f;          // grados
+    private float gravityRotationSpeed = 50f;   // grados/seg (sube/baja esto)
+
 
 
 
@@ -237,6 +265,11 @@ public class Main extends ApplicationAdapter {
 
         fuerzaGravTex = new Texture("fuerza_gravitacional.png");
 
+        escudoItemTex = new Texture("escudo.png");
+        naveEscudoTex = new Texture("nave_escudo.png");
+        sfxEscudo = Gdx.audio.newSound(Gdx.files.internal("sonido_recoger_escudo.ogg"));
+
+
 
 
 
@@ -251,6 +284,9 @@ public class Main extends ApplicationAdapter {
 
         sfxDisparo = Gdx.audio.newSound(Gdx.files.internal("sonido_disparo.ogg"));
         sfxExplosion = Gdx.audio.newSound(Gdx.files.internal("explosion.ogg"));
+        sfxGravedad = Gdx.audio.newSound(Gdx.files.internal("sonido_gravitacional.ogg"));
+
+
 
 
         laserVerde = new Texture("laser_verde.png");
@@ -358,6 +394,15 @@ public class Main extends ApplicationAdapter {
         gravityX = 0f;
         gravityY = 0f;
 
+        shieldActive = false;
+        shieldVisible = false;
+        shieldSpawnTimer = 0f;
+
+        shieldX = 0f;
+        shieldY = 0f;
+        shieldBounds = null;
+
+
 
 
     }
@@ -390,13 +435,30 @@ public class Main extends ApplicationAdapter {
         drawParallaxLayer(fondoLejano, oLej);
         drawParallaxLayer(fondoCercano, oCer);
 
+        // ===== ITEM ESCUDO =====
+        if (shieldVisible && shieldBounds != null) {
+            batch.draw(
+                escudoItemTex,
+                shieldX,
+                shieldY,
+                shieldBounds.width,
+                shieldBounds.height
+            );
+        }
+
+
+
         if (gravityActive && fuerzaGravTex != null) {
             batch.draw(
                 fuerzaGravTex,
-                gravityX,
-                gravityY,
-                gravitySpriteSize,
-                gravitySpriteSize
+                gravityX, gravityY,                          // posición
+                gravitySpriteSize / 2f, gravitySpriteSize / 2f, // origen (centro)
+                gravitySpriteSize, gravitySpriteSize,        // tamaño
+                1f, 1f,                                      // escala
+                gravityRotation,                             // rotación (grados)
+                0, 0,                                        // srcX, srcY
+                fuerzaGravTex.getWidth(), fuerzaGravTex.getHeight(), // srcW, srcH
+                false, false                                 // flip
             );
         }
 
@@ -405,9 +467,24 @@ public class Main extends ApplicationAdapter {
         for (EnemyBullet b : enemyBullets) batch.draw(laserRojo, b.x, b.y, b.width, b.height);
         for (Bullet b : bullets) batch.draw(laserVerde, b.x, b.y, b.width, b.height);
 
-        float shipW = xwing.getWidth() * scale;
-        float shipH = xwing.getHeight() * scale;
-        if (playerHp > 0) batch.draw(xwing, x, y, shipW, shipH);
+        float baseW = xwing.getWidth() * scale;
+        float baseH = xwing.getHeight() * scale;
+
+        if (playerHp > 0) {
+            if (shieldActive) {
+                float w = baseW * shieldScaleMultiplier;
+                float h = baseH * shieldScaleMultiplier;
+
+                float drawX = x - (w - baseW) / 2f;
+                float drawY = y - (h - baseH) / 2f;
+
+                batch.draw(naveEscudoTex, drawX, drawY, w, h);
+            } else {
+                batch.draw(xwing, x, y, baseW, baseH);
+            }
+        }
+
+
 
         for (Explosion ex : explosions) {
             float a = ex.alpha();
@@ -518,10 +595,46 @@ public class Main extends ApplicationAdapter {
 
         if (gravityActive) {
             gravityTimer -= delta;
+            gravityRotation += gravityRotationSpeed * delta;
+
+            gravityRotation %= 360f;
+
             if (gravityTimer <= 0f) {
                 gravityActive = false;
             }
         }
+
+        // ===== ESCUDO: spawn =====
+        shieldSpawnTimer += delta;
+
+        if (!shieldVisible && shieldSpawnTimer >= shieldSpawnDelay && !shieldActive) {
+            shieldSpawnTimer = 0f;
+
+            if (MathUtils.random() < 0.6f) { // probabilidad
+                spawnShieldItem();
+            }
+        }
+
+        if (shieldVisible) {
+            shieldY -= shieldSpeed * delta;
+            shieldBounds.setPosition(shieldX, shieldY);
+
+            if (shieldY + shieldBounds.height < 0) {
+                shieldVisible = false;
+            }
+        }
+
+        if (shieldVisible && shieldBounds.overlaps(playerBounds)) {
+            shieldVisible = false;
+            shieldActive = true;
+
+            if (sfxEscudo != null) {
+                sfxEscudo.play(0.6f);
+            }
+        }
+
+
+
 
 
         if (scorePopTimer > 0f) scorePopTimer -= delta;
@@ -595,34 +708,43 @@ public class Main extends ApplicationAdapter {
         if (playerHp > 0 && invulnTimer <= 0f) {
             for (Iterator<EnemyBullet> it = enemyBullets.iterator(); it.hasNext(); ) {
                 EnemyBullet b = it.next();
+
                 if (b.bounds.overlaps(playerBounds)) {
                     it.remove();
-                    playerHp--;
-                    invulnTimer = INVULN_TIME;
 
-                    vibrateHit();
+                    if (shieldActive) {
+                        // ✅ el escudo bloquea 1 impacto
+                        shieldActive = false;
+                        invulnTimer = 0.15f; // mini invuln para evitar hits encadenados
 
-                    addExplosionCentered(x + shipW / 2f, y + shipH / 2f, shipW * 1.1f);
-                    if (sfxExplosion != null) {
-                        sfxExplosion.play(0.3f, 1.1f, 0f);
-                    }
+                    } else {
+                        // ✅ daño normal
+                        playerHp--;
+                        invulnTimer = INVULN_TIME;
 
+                        vibrateHit();
 
-                    if (playerHp <= 0) {
-                        playerHp = 0;
-
-                        vibrateDeathPattern();
-
-                        addExplosionCentered(x + shipW / 2f, y + shipH / 2f, shipW * 1.9f);
+                        addExplosionCentered(x + shipW / 2f, y + shipH / 2f, shipW * 1.1f);
                         if (sfxExplosion != null) {
-                            sfxExplosion.play(1.0f, 0.85f, 0f);
+                            sfxExplosion.play(0.3f, 1.1f, 0f);
                         }
 
-                        state = GameState.GAME_OVER;
-                        gameOverDelayTimer = 0f;
+                        if (playerHp <= 0) {
+                            playerHp = 0;
 
+                            vibrateDeathPattern();
+                            addExplosionCentered(x + shipW / 2f, y + shipH / 2f, shipW * 1.9f);
+
+                            if (sfxExplosion != null) {
+                                sfxExplosion.play(1.0f, 0.85f, 0f);
+                            }
+
+                            state = GameState.GAME_OVER;
+                            gameOverDelayTimer = 0f;
+                        }
                     }
-                    break;
+
+                    break; // ✅ importante: sales del loop tras un impacto
                 }
             }
         }
@@ -657,6 +779,16 @@ public class Main extends ApplicationAdapter {
 
         font.getData().setScale(1.0f);
     }
+    private void spawnShieldItem() {
+        shieldVisible = true;
+
+        float size = 90f;
+        shieldX = MathUtils.random(40f, WORLD_WIDTH - size - 40f);
+        shieldY = WORLD_HEIGHT + size;
+
+        shieldBounds = new Rectangle(shieldX, shieldY, size, size);
+    }
+
 
 
     private void triggerScorePop() {
@@ -780,14 +912,18 @@ public class Main extends ApplicationAdapter {
     private void spawnGravityWell() {
         gravityActive = true;
         gravityTimer = gravityDuration;
+        gravityRotation = 0f;
 
-        // 50% izquierda / 50% derecha
         boolean left = MathUtils.randomBoolean();
+        gravityX = left ? gravitySideMargin
+            : (WORLD_WIDTH - gravitySideMargin - gravitySpriteSize);
 
-        gravityX = left ? gravitySideMargin : (WORLD_WIDTH - gravitySideMargin - gravitySpriteSize);
-
-        // altura random por la zona media-alta (evita tapar UI y que sea injusto abajo)
         gravityY = MathUtils.random(700f, WORLD_HEIGHT - 450f);
+
+        // 🔊 SONIDO GRAVITACIONAL
+        if (sfxGravedad != null) {
+            sfxGravedad.play(2.0f); // volumen del sonido gravitacional (ajustable)
+        }
     }
 
 
@@ -829,6 +965,13 @@ public class Main extends ApplicationAdapter {
         if (sfxExplosion != null) sfxExplosion.dispose();
         if (scoreIcon != null) scoreIcon.dispose();
         if (fuerzaGravTex != null) fuerzaGravTex.dispose();
+        if (sfxGravedad != null) sfxGravedad.dispose();
+        if (escudoItemTex != null) escudoItemTex.dispose();
+        if (naveEscudoTex != null) naveEscudoTex.dispose();
+        if (sfxEscudo != null) sfxEscudo.dispose();
+
+
+
 
 
 
