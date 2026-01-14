@@ -23,6 +23,8 @@ import java.util.Iterator;
 
 public class Main extends ApplicationAdapter {
 
+
+
     public static PlatformServices services;
 
     private SpriteBatch batch;
@@ -59,6 +61,12 @@ public class Main extends ApplicationAdapter {
 
     private Sound sfxEscudo;
 
+    private Sound sfxRomperEscudo;
+
+    private Sound sfxCuracion;
+
+
+
 
 
     private float sfxVolume = 0.1f;
@@ -81,6 +89,20 @@ public class Main extends ApplicationAdapter {
     private float shieldX, shieldY;
     private float shieldSpeed = 180f;
     private boolean shieldVisible = false;
+
+
+    // ===== ITEM VIDA EXTRA =====
+    private boolean hpItemVisible = false;
+    private float hpItemSpawnTimer = 0f;
+    private float hpItemSpawnDelay = 16f; // cada cuantos segundos puede salir (ajustable)
+
+    private Rectangle hpItemBounds;
+    private float hpItemX, hpItemY;
+    private float hpItemSpeed = 170f; // velocidad bajada (ajustable)
+
+
+
+
     private Array<Bullet> bullets;
     private float shootCooldown = 0.15f;
     private float shootTimer = 0f;
@@ -134,7 +156,11 @@ public class Main extends ApplicationAdapter {
     private float gravityRotationSpeed = 50f;   // grados/seg (sube/baja esto)
 
 
-
+    // ===== CALIBRACIÓN ACELERÓMETRO =====
+    private boolean accelCalibrated = false;
+    private float accelZeroX = 0f;
+    private float accelZeroY = 0f;
+    private float accelDeadZone = 0.08f; // zona muerta (ajustable)
 
     private Texture explosionTex;
     private Array<Explosion> explosions;
@@ -268,6 +294,11 @@ public class Main extends ApplicationAdapter {
         escudoItemTex = new Texture("escudo.png");
         naveEscudoTex = new Texture("nave_escudo.png");
         sfxEscudo = Gdx.audio.newSound(Gdx.files.internal("sonido_recoger_escudo.ogg"));
+        sfxRomperEscudo = Gdx.audio.newSound(
+            Gdx.files.internal("sonido_romperse_escudo.ogg"));
+        sfxCuracion = Gdx.audio.newSound(Gdx.files.internal("sonido_curacion.ogg"));
+
+
 
 
 
@@ -401,6 +432,15 @@ public class Main extends ApplicationAdapter {
         shieldX = 0f;
         shieldY = 0f;
         shieldBounds = null;
+        accelCalibrated = false;
+
+        hpItemVisible = false;
+        hpItemSpawnTimer = 0f;
+        hpItemBounds = null;
+        hpItemX = 0f;
+        hpItemY = 0f;
+
+
 
 
 
@@ -445,6 +485,17 @@ public class Main extends ApplicationAdapter {
                 shieldBounds.height
             );
         }
+        // ===== ITEM VIDA =====
+        if (hpItemVisible && hpItemBounds != null) {
+            batch.draw(
+                vidaTex,
+                hpItemX,
+                hpItemY,
+                hpItemBounds.width,
+                hpItemBounds.height
+            );
+        }
+
 
 
 
@@ -516,10 +567,21 @@ public class Main extends ApplicationAdapter {
     }
 
     private void updatePlaying(float delta) {
+        if (!accelCalibrated && Gdx.input.isPeripheralAvailable(Input.Peripheral.Accelerometer)) {
+            accelZeroX = Gdx.input.getAccelerometerX();
+            accelZeroY = Gdx.input.getAccelerometerY();
+            accelCalibrated = true;
+        }
+
         float dx = 0f, dy = 0f;
         if (Gdx.input.isPeripheralAvailable(Input.Peripheral.Accelerometer)) {
-            dx = -Gdx.input.getAccelerometerX();
-            dy = -Gdx.input.getAccelerometerY();
+            dx = -(Gdx.input.getAccelerometerX() - accelZeroX);
+            dy = -(Gdx.input.getAccelerometerY() - accelZeroY);
+
+// zona muerta para evitar temblores
+            if (Math.abs(dx) < accelDeadZone) dx = 0f;
+            if (Math.abs(dy) < accelDeadZone) dy = 0f;
+
         } else {
             if (Gdx.input.isKeyPressed(Input.Keys.LEFT))  dx = -1f;
             if (Gdx.input.isKeyPressed(Input.Keys.RIGHT)) dx =  1f;
@@ -615,6 +677,10 @@ public class Main extends ApplicationAdapter {
             }
         }
 
+
+
+
+
         if (shieldVisible) {
             shieldY -= shieldSpeed * delta;
             shieldBounds.setPosition(shieldX, shieldY);
@@ -633,7 +699,40 @@ public class Main extends ApplicationAdapter {
             }
         }
 
+        // ===== VIDA: spawn =====
+        hpItemSpawnTimer += delta;
 
+// Solo spawnea si NO estás ya a tope (3)
+        if (!hpItemVisible && hpItemSpawnTimer >= hpItemSpawnDelay && playerHp < 3) {
+            hpItemSpawnTimer = 0f;
+
+            if (MathUtils.random() < 0.55f) { // probabilidad (ajustable)
+                spawnHpItem();
+            }
+        }
+        if (hpItemVisible & hpItemBounds != null) {
+            hpItemY -= hpItemSpeed * delta;
+            hpItemBounds.setPosition(hpItemX, hpItemY);
+
+            if (hpItemY + hpItemBounds.height < 0) {
+                hpItemVisible = false;
+            }
+        }
+        if (hpItemVisible && hpItemBounds.overlaps(playerBounds)) {
+            hpItemVisible = false;
+
+            playerHp = Math.min(3, playerHp + 1);
+
+            if (sfxCuracion != null) {
+                sfxCuracion.play(0.7f);
+            }
+
+
+            // (opcional) mini feedback: vibración suave
+            // vibrateSafe(60);
+
+            // (opcional) sonido: si luego le pones uno, aquí iría
+        }
 
 
 
@@ -713,12 +812,14 @@ public class Main extends ApplicationAdapter {
                     it.remove();
 
                     if (shieldActive) {
-                        // ✅ el escudo bloquea 1 impacto
                         shieldActive = false;
-                        invulnTimer = 0.15f; // mini invuln para evitar hits encadenados
+                        invulnTimer = 0.15f;
+
+                        if (sfxRomperEscudo != null) {
+                            sfxRomperEscudo.play(0.9f);
+                        }
 
                     } else {
-                        // ✅ daño normal
                         playerHp--;
                         invulnTimer = INVULN_TIME;
 
@@ -744,10 +845,11 @@ public class Main extends ApplicationAdapter {
                         }
                     }
 
-                    break; // ✅ importante: sales del loop tras un impacto
+                    break; // ✅ importante: sales tras 1 impacto
                 }
             }
         }
+
 
         for (Iterator<Explosion> it = explosions.iterator(); it.hasNext(); ) {
             Explosion ex = it.next();
@@ -788,6 +890,16 @@ public class Main extends ApplicationAdapter {
 
         shieldBounds = new Rectangle(shieldX, shieldY, size, size);
     }
+    private void spawnHpItem() {
+        hpItemVisible = true;
+
+        float size = 90f;
+        hpItemX = MathUtils.random(40f, WORLD_WIDTH - size - 40f);
+        hpItemY = WORLD_HEIGHT + size;
+
+        hpItemBounds = new Rectangle(hpItemX, hpItemY, size, size);
+    }
+
 
 
 
@@ -969,9 +1081,8 @@ public class Main extends ApplicationAdapter {
         if (escudoItemTex != null) escudoItemTex.dispose();
         if (naveEscudoTex != null) naveEscudoTex.dispose();
         if (sfxEscudo != null) sfxEscudo.dispose();
-
-
-
+        if (sfxRomperEscudo != null) sfxRomperEscudo.dispose();
+        if (sfxCuracion != null) sfxCuracion.dispose();
 
 
 
