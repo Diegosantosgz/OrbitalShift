@@ -18,6 +18,8 @@ import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.badlogic.gdx.utils.Timer;
+import com.badlogic.gdx.math.Vector3;
+
 
 import java.util.Iterator;
 
@@ -45,6 +47,10 @@ public class Main extends ApplicationAdapter {
     private float speed = 500f;
     private float scale = 0.10f;
 
+    private float touchMoveDeadZone = 22f;   // zona muerta en px (ajusta)
+    private float touchMoveSpeed = 750f;     // velocidad del movimiento táctil (ajusta)
+
+
     private float oMuy = 0, oLej = 0, oCer = 0;
     private float vMuy = 10f, vLej = 20f, vCer = 50f;
 
@@ -52,6 +58,19 @@ public class Main extends ApplicationAdapter {
     private float scorePopTimer = 0f;
     private static final float SCORE_POP_DURATION = 0.18f;
     private float scoreScaleBase = 3.2f; // tu escala normal
+
+    // ===== TOUCHPAD DINÁMICO (solo si multitouchEnabled) =====
+    private int movePointer = -1;           // qué dedo controla el pad
+    private boolean touchpadActive = false;
+
+    private float padBaseX = 0f, padBaseY = 0f;   // centro del pad
+    private float padKnobX = 0f, padKnobY = 0f;   // centro del knob
+    private float padRadius = 140f;               // radio base (ajusta)
+    private float padKnobRadius = 55f;            // radio knob (ajusta)
+
+    private float touchpadMaxSpeed = 650f;        // velocidad máx (ajusta)
+    private float padDx = 0f, padDy = 0f;         // dirección normalizada [-1..1]
+
 
 
     private Music musicaFondo;
@@ -70,11 +89,14 @@ public class Main extends ApplicationAdapter {
 
 
 
-
-
     private float sfxVolume = 0.1f;
 
     private Texture laserVerde;
+
+    // ===== OPTIONS: MULTITOUCH =====
+    private boolean multitouchEnabled = true;   // por defecto ON
+    private Rectangle btnToggleMultitouch;
+
 
     // ===== ITEM ESCUDO =====
     private Texture escudoItemTex;
@@ -137,6 +159,10 @@ public class Main extends ApplicationAdapter {
     private float vidaPadding = 14f;
     private float vidaMarginLeft = 24f;
     private float vidaMarginTop = 24f;
+
+
+
+
 
     // ===== GRAVEDAD / AGUJERO NEGRO =====
     private Texture fuerzaGravTex;
@@ -285,6 +311,9 @@ public class Main extends ApplicationAdapter {
         viewport = new FitViewport(WORLD_WIDTH, WORLD_HEIGHT, camera);
         viewport.apply();
         camera.position.set(WORLD_WIDTH / 2f, WORLD_HEIGHT / 2f, 0);
+
+        btnToggleMultitouch = new Rectangle((WORLD_WIDTH - 720f) / 2f, 900f, 720f, 120f);
+
 
         fondoMuyLejano = new Texture("fondo_muy_lejano.png");
         fondoLejano = new Texture("fondo_lejano_nuevo.png");
@@ -498,7 +527,7 @@ public class Main extends ApplicationAdapter {
             return;
         }
         if (state == GameState.OPTIONS) {
-            drawSimpleScreen("OPCIONES", "Aquí pondremos volumen y sensibilidad\nToca para volver");
+            drawOptionsScreen();
             batch.end();
             return;
         }
@@ -606,30 +635,105 @@ public class Main extends ApplicationAdapter {
     }
 
     private void updatePlaying(float delta) {
-        if (!accelCalibrated && Gdx.input.isPeripheralAvailable(Input.Peripheral.Accelerometer)) {
-            accelZeroX = Gdx.input.getAccelerometerX();
-            accelZeroY = Gdx.input.getAccelerometerY();
-            accelCalibrated = true;
-        }
-
         float dx = 0f, dy = 0f;
-        if (Gdx.input.isPeripheralAvailable(Input.Peripheral.Accelerometer)) {
-            dx = -(Gdx.input.getAccelerometerX() - accelZeroX);
-            dy = -(Gdx.input.getAccelerometerY() - accelZeroY);
 
-// zona muerta para evitar temblores
-            if (Math.abs(dx) < accelDeadZone) dx = 0f;
-            if (Math.abs(dy) < accelDeadZone) dy = 0f;
+
+        if (multitouchEnabled) {
+
+            // 1) Si aún no tenemos dedo de movimiento, buscamos uno en la mitad izquierda
+            if (!touchpadActive) {
+                for (int p = 0; p < 5; p++) {
+                    if (!Gdx.input.isTouched(p)) continue;
+
+                    Vector3 vv = new Vector3(Gdx.input.getX(p), Gdx.input.getY(p), 0);
+                    viewport.unproject(vv);
+
+                    // mitad izquierda -> activar touchpad
+                    if (vv.x < WORLD_WIDTH * 0.5f) {
+                        movePointer = p;
+                        touchpadActive = true;
+
+                        padBaseX = vv.x;
+                        padBaseY = vv.y;
+                        padKnobX = padBaseX;
+                        padKnobY = padBaseY;
+
+                        padDx = 0f;
+                        padDy = 0f;
+                        break;
+                    }
+                }
+            }
+
+            // 2) Si el dedo de movimiento sigue tocando, actualizamos dirección
+            if (touchpadActive) {
+                if (movePointer >= 0 && Gdx.input.isTouched(movePointer)) {
+
+                    Vector3 vv = new Vector3(Gdx.input.getX(movePointer), Gdx.input.getY(movePointer), 0);
+                    viewport.unproject(vv);
+
+                    float vx = vv.x - padBaseX;
+                    float vy = vv.y - padBaseY;
+
+                    // clamp dentro del radio
+                    float len = (float)Math.sqrt(vx * vx + vy * vy);
+                    if (len > padRadius) {
+                        float s = padRadius / len;
+                        vx *= s;
+                        vy *= s;
+                        len = padRadius;
+                    }
+
+                    padKnobX = padBaseX + vx;
+                    padKnobY = padBaseY + vy;
+
+                    // dirección normalizada [-1..1]
+                    padDx = vx / padRadius;
+                    padDy = vy / padRadius;
+
+                } else {
+                    // soltó el dedo -> desactivar pad
+                    touchpadActive = false;
+                    movePointer = -1;
+                    padDx = 0f;
+                    padDy = 0f;
+                }
+            }
+
+            // 3) Mover nave con la dirección del pad
+            dx = padDx;
+            dy = padDy;
+
+            x += dx * touchpadMaxSpeed * delta;
+            y += dy * touchpadMaxSpeed * delta;
 
         } else {
-            if (Gdx.input.isKeyPressed(Input.Keys.LEFT))  dx = -1f;
-            if (Gdx.input.isKeyPressed(Input.Keys.RIGHT)) dx =  1f;
-            if (Gdx.input.isKeyPressed(Input.Keys.UP))    dy =  1f;
-            if (Gdx.input.isKeyPressed(Input.Keys.DOWN))  dy = -1f;
+            // ===== tu control normal por acelerómetro (igual que lo tienes) =====
+            if (!accelCalibrated && Gdx.input.isPeripheralAvailable(Input.Peripheral.Accelerometer)) {
+                accelZeroX = Gdx.input.getAccelerometerX();
+                accelZeroY = Gdx.input.getAccelerometerY();
+                accelCalibrated = true;
+            }
+
+            if (Gdx.input.isPeripheralAvailable(Input.Peripheral.Accelerometer)) {
+                dx = -(Gdx.input.getAccelerometerX() - accelZeroX);
+                dy = -(Gdx.input.getAccelerometerY() - accelZeroY);
+
+                if (Math.abs(dx) < accelDeadZone) dx = 0f;
+                if (Math.abs(dy) < accelDeadZone) dy = 0f;
+
+            } else {
+                if (Gdx.input.isKeyPressed(Input.Keys.LEFT))  dx = -1f;
+                if (Gdx.input.isKeyPressed(Input.Keys.RIGHT)) dx =  1f;
+                if (Gdx.input.isKeyPressed(Input.Keys.UP))    dy =  1f;
+                if (Gdx.input.isKeyPressed(Input.Keys.DOWN))  dy = -1f;
+            }
+
+            x += dx * speed * delta;
+            y += dy * speed * delta;
         }
 
-        x += dx * speed * delta;
-        y += dy * speed * delta;
+
 
         // ===== GRAVEDAD: arrastre lateral =====
         if (gravityActive && playerHp > 0) {
@@ -658,7 +762,27 @@ public class Main extends ApplicationAdapter {
         if (invulnTimer > 0f) invulnTimer -= delta;
 
         shootTimer += delta;
-        boolean shootPressed = Gdx.input.isKeyPressed(Input.Keys.SPACE) || Gdx.input.isTouched();
+        boolean shootPressed = Gdx.input.isKeyPressed(Input.Keys.SPACE);
+
+        if (multitouchEnabled) {
+            for (int p = 0; p < 5; p++) {
+                if (p == movePointer) continue;       // <- importante
+                if (!Gdx.input.isTouched(p)) continue;
+
+                Vector3 vv = new Vector3(Gdx.input.getX(p), Gdx.input.getY(p), 0);
+                viewport.unproject(vv);
+
+                if (vv.x >= WORLD_WIDTH * 0.5f) {
+                    shootPressed = true;
+                    break;
+                }
+            }
+        } else {
+            shootPressed = shootPressed || Gdx.input.isTouched();
+        }
+
+
+
         if (shootPressed && shootTimer >= shootCooldown && playerHp > 0) {
             shootTimer = 0f;
 
@@ -939,9 +1063,6 @@ public class Main extends ApplicationAdapter {
         hpItemBounds = new Rectangle(hpItemX, hpItemY, size, size);
     }
 
-
-
-
     private void triggerScorePop() {
         scorePopTimer = SCORE_POP_DURATION;
     }
@@ -968,24 +1089,23 @@ public class Main extends ApplicationAdapter {
     }
     private void updateMenuScreens(float delta) {
 
-        // BACK / ESC siempre funciona aunque NO haya touch
+        // BACK / ESC siempre
         if (Gdx.input.isKeyJustPressed(Input.Keys.BACK) || Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
             if (state == GameState.MENU) {
                 Gdx.app.exit();
-            } else if (state != GameState.PLAYING) {
+            } else {
                 state = GameState.MENU;
             }
             return;
         }
 
-        // Si no hay toque, no hacemos nada más
         if (!Gdx.input.justTouched()) return;
 
-        float sx = Gdx.input.getX();
-        float sy = Gdx.input.getY();
-
-        float worldX = sx * (WORLD_WIDTH / Gdx.graphics.getWidth());
-        float worldY = WORLD_HEIGHT - (sy * (WORLD_HEIGHT / Gdx.graphics.getHeight()));
+        // Coordenadas correctas con viewport (FitViewport)
+        Vector3 v = new Vector3(Gdx.input.getX(), Gdx.input.getY(), 0);
+        viewport.unproject(v);
+        float worldX = v.x;
+        float worldY = v.y;
 
         if (state == GameState.MENU) {
             if (btnPlay.contains(worldX, worldY)) {
@@ -997,11 +1117,25 @@ public class Main extends ApplicationAdapter {
             if (btnCredits.contains(worldX, worldY)) { state = GameState.CREDITS; return; }
             if (btnHelp.contains(worldX, worldY))    { state = GameState.HELP; return; }
             if (btnQuit.contains(worldX, worldY))    { Gdx.app.exit(); return; }
-        } else {
-            // En OPTIONS / CREDITS / HELP: tocar en cualquier sitio vuelve al menú
-            state = GameState.MENU;
+            return;
         }
+
+        if (state == GameState.OPTIONS) {
+            // si toca el botón -> toggle y se queda
+            if (btnToggleMultitouch.contains(worldX, worldY)) {
+                multitouchEnabled = !multitouchEnabled;
+                return;
+            }
+            // si toca fuera -> volver al menú
+            state = GameState.MENU;
+            return;
+        }
+
+        // CREDITS / HELP: tocar vuelve al menú
+        state = GameState.MENU;
     }
+
+
 
 
     private void drawMenu() {
@@ -1034,6 +1168,68 @@ public class Main extends ApplicationAdapter {
         batch.setColor(1f, 1f, 1f, 1f);
         drawCenteredText(text, r.x + r.width / 2f, r.y + r.height / 2f + 22f);
     }
+    private void drawTouchpad() {
+        if (!touchpadActive) return;
+
+        // base (círculo grande) usando whitePixel como "cuadrado"
+        batch.setColor(1f, 1f, 1f, 0.18f);
+        batch.draw(
+            whitePixel,
+            padBaseX - padRadius, padBaseY - padRadius,
+            padRadius * 2f, padRadius * 2f
+        );
+
+        // knob (círculo pequeño)
+        batch.setColor(1f, 1f, 1f, 0.35f);
+        batch.draw(
+            whitePixel,
+            padKnobX - padKnobRadius, padKnobY - padKnobRadius,
+            padKnobRadius * 2f, padKnobRadius * 2f
+        );
+
+        batch.setColor(1f, 1f, 1f, 1f);
+    }
+
+    private void drawOptionsScreen() {
+        batch.setColor(0f, 0f, 0f, 0.65f);
+        batch.draw(whitePixel, 0, 0, WORLD_WIDTH, WORLD_HEIGHT);
+        batch.setColor(1f, 1f, 1f, 1f);
+
+        font.getData().setScale(6.0f);
+        drawCenteredText("OPCIONES", WORLD_WIDTH / 2f, 1450f);
+
+        font.getData().setScale(2.4f);
+        drawCenteredText("Multitouch (mover + disparar)", WORLD_WIDTH / 2f, 1200f);
+
+        drawToggleButton(
+            btnToggleMultitouch,
+            "MULTITOUCH: " + (multitouchEnabled ? "ON" : "OFF"),
+            multitouchEnabled
+        );
+
+        font.getData().setScale(1.8f);
+        drawCenteredText("Toca el botón para cambiar", WORLD_WIDTH / 2f, 650f);
+        drawCenteredText("BACK para volver", WORLD_WIDTH / 2f, 360f);
+
+        font.getData().setScale(1.0f);
+    }
+
+    private void drawToggleButton(Rectangle r, String text, boolean on) {
+        if (on) batch.setColor(0.20f, 0.85f, 0.35f, 0.85f);
+        else    batch.setColor(0.85f, 0.25f, 0.25f, 0.85f);
+
+        batch.draw(whitePixel, r.x, r.y, r.width, r.height);
+
+        batch.setColor(0f, 0f, 0f, 0.25f);
+        batch.draw(whitePixel, r.x, r.y, r.width, 6f);
+        batch.draw(whitePixel, r.x, r.y + r.height - 6f, r.width, 6f);
+
+        batch.setColor(1f, 1f, 1f, 1f);
+        font.getData().setScale(2.6f);
+        drawCenteredText(text, r.x + r.width / 2f, r.y + r.height / 2f + 22f);
+        font.getData().setScale(1.0f);
+    }
+
 
     private void drawSimpleScreen(String title, String body) {
         batch.setColor(0f, 0f, 0f, 0.65f);
