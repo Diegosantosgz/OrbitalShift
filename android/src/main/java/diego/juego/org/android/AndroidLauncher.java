@@ -18,13 +18,9 @@ public class AndroidLauncher extends AndroidApplication {
         config.useAccelerometer = true;
         config.useGyroscope = true;
 
-        //  Conectar servicios Android (vibración real)
+        // Inyectar servicios Android (vibración real)
         Main.services = new AndroidServices(this);
 
-        Main.services.vibrate(500);
-
-
-        //  Crear y lanzar el juego
         initialize(new Main(), config);
     }
 }

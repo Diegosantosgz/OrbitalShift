@@ -16,28 +16,24 @@ public class AndroidServices implements PlatformServices {
     }
 
     @Override
-    public void vibrate(int ms) {
+    public void vibrar(int ms) {
         if (vibrator == null) return;
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            vibrator.vibrate(
-                VibrationEffect.createOneShot(ms, VibrationEffect.DEFAULT_AMPLITUDE)
-            );
+            vibrator.vibrate(VibrationEffect.createOneShot(ms, VibrationEffect.DEFAULT_AMPLITUDE));
         } else {
             vibrator.vibrate(ms);
         }
     }
 
     @Override
-    public void vibratePattern(long[] pattern) {
+    public void vibrarPatron(long[] patron) {
         if (vibrator == null) return;
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            vibrator.vibrate(
-                VibrationEffect.createWaveform(pattern, -1)
-            );
+            vibrator.vibrate(VibrationEffect.createWaveform(patron, -1));
         } else {
-            vibrator.vibrate(pattern, -1);
+            vibrator.vibrate(patron, -1);
         }
     }
 }
