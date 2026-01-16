@@ -38,6 +38,20 @@ public class EscenaJuego implements Escena {
     private float escala = 0.10f;
 
     private Rectangle limitesJugador;
+    // ===== ANTIGRAVITACIONAL (ITEM) =====
+    private boolean antiGravedadActiva = false;
+    private boolean antiGravedadVisible = false;
+
+    private float timerSpawnAntiGrav = 0f;
+    private float delaySpawnAntiGrav = 18f;
+
+    private float duracionAntiGrav = 6f;
+    private float timerAntiGrav = 0f;
+
+    private Rectangle limitesAntiGrav;
+    private float antiGravX, antiGravY;
+    private float velAntiGrav = 160f;
+
     private int vidaJugador = 3;
     private int puntuacion = 0;
 
@@ -81,6 +95,14 @@ public class EscenaJuego implements Escena {
     private float margenLateralGravedad = 60f;
     private float tamSpriteGravedad = 220f;
 
+    // ===== HUD: barra antigravedad =====
+    private final float barraAntiW = 520f;
+    private final float barraAntiH = 18f;
+    private final float barraAntiX = (Main.ANCHO_MUNDO - barraAntiW) / 2f;
+    private final float barraAntiY = Main.ALTO_MUNDO - 150f; // Barra duracion antigravedad debajo del marcador
+    private final float barraPadding = 4f;
+
+
     private float rotGravedad = 0f;
     private float velRotGravedad = 50f;
 
@@ -100,7 +122,10 @@ public class EscenaJuego implements Escena {
     private float escudoX, escudoY;
     private float velEscudo = 180f;
 
+    // Escalas para el tamaño de imagen
     private float multiplicadorEscudo = 1.75f;
+    private float multiplicadorAntiGrav = 2.3f; //
+
 
     // VIDA (ITEM)
     private boolean vidaItemVisible = false;
@@ -170,6 +195,14 @@ public class EscenaJuego implements Escena {
         gravedadX = 0f;
         gravedadY = 0f;
         rotGravedad = 0f;
+
+
+        antiGravedadActiva = false;
+        antiGravedadVisible = false;
+        timerSpawnAntiGrav = 0f;
+        timerAntiGrav = 0f;
+        limitesAntiGrav = null;
+
 
         // escudo
         escudoActivo = false;
@@ -244,9 +277,29 @@ public class EscenaJuego implements Escena {
             x += dx * velocidad * delta;
             y += dy * velocidad * delta;
         }
+        // ===== CONTROL TECLADO (Desktop / pruebas) =====
+// Esto permite mover SIEMPRE con flechas (y WASD) en el lwjgl3Launcher.
+        float kx = 0f, ky = 0f;
+
+        if (Gdx.input.isKeyPressed(Input.Keys.LEFT) || Gdx.input.isKeyPressed(Input.Keys.A))  kx -= 1f;
+        if (Gdx.input.isKeyPressed(Input.Keys.RIGHT) || Gdx.input.isKeyPressed(Input.Keys.D)) kx += 1f;
+        if (Gdx.input.isKeyPressed(Input.Keys.UP) || Gdx.input.isKeyPressed(Input.Keys.W))    ky += 1f;
+        if (Gdx.input.isKeyPressed(Input.Keys.DOWN) || Gdx.input.isKeyPressed(Input.Keys.S))  ky -= 1f;
+
+// Si hay teclado pulsado, prioriza teclado (anula el dx/dy del touchpad/acelerómetro)
+        if (kx != 0f || ky != 0f) {
+            float len = (float)Math.sqrt(kx*kx + ky*ky);
+            if (len != 0f) { kx /= len; ky /= len; } // normaliza para diagonales
+            dx = kx;
+            dy = ky;
+
+            x += dx * velocidad * delta;
+            y += dy * velocidad * delta;
+        }
+
 
         // ===== gravedad: arrastre lateral =====
-        if (gravedadActiva) {
+        if (gravedadActiva && !antiGravedadActiva){
             float shipW = recursos.naveJugador.getWidth() * escala;
             float centroPozoX = gravedadX + tamSpriteGravedad / 2f;
             float centroNaveX = x + shipW / 2f;
@@ -368,6 +421,50 @@ public class EscenaJuego implements Escena {
             reproducir(recursos.sfxCuracion, 0.7f);
         }
 
+        // ===== antigravedad spawn =====
+        timerSpawnAntiGrav += delta;
+        if (!antiGravedadVisible && !antiGravedadActiva && timerSpawnAntiGrav >= delaySpawnAntiGrav) {
+            timerSpawnAntiGrav = 0f;
+            if (MathUtils.random() < 0.5f) {
+                spawnItemAntiGravedad();
+            }
+        }
+        // antigravedad caida
+        if (antiGravedadVisible && limitesAntiGrav != null) {
+            antiGravY -= velAntiGrav * delta;
+            limitesAntiGrav.setPosition(antiGravX, antiGravY);
+
+            if (antiGravY + limitesAntiGrav.height < 0) {
+                antiGravedadVisible = false;
+            }
+        }
+        // antigravedad caída
+        if (antiGravedadVisible && limitesAntiGrav != null &&
+            limitesAntiGrav.overlaps(limitesJugador)) {
+
+            antiGravedadVisible = false;
+            antiGravedadActiva = true;
+            timerAntiGrav = duracionAntiGrav;
+
+
+
+            timerSpawnGravedad = 0f; // <- para que no salga una gravedad inmediata al terminar
+
+
+            reproducir(recursos.sfxAntiGravedad, 0.8f);
+        }
+
+        if (antiGravedadActiva) {
+            timerAntiGrav -= delta;
+            if (timerAntiGrav <= 0f) {
+                antiGravedadActiva = false;
+            }
+        }
+
+
+
+
+
         if (timerScorePop > 0f) timerScorePop -= delta;
 
         // ===== spawn enemigos =====
@@ -484,6 +581,17 @@ public class EscenaJuego implements Escena {
         if (vidaItemVisible && limitesVidaItem != null) {
             batch.draw(recursos.iconoVida, vidaItemX, vidaItemY, limitesVidaItem.width, limitesVidaItem.height);
         }
+        // item antigravitacional
+        if (antiGravedadVisible && limitesAntiGrav != null) {
+            batch.draw(
+                recursos.itemAntigravitacional,
+                antiGravX,
+                antiGravY,
+                limitesAntiGrav.width,
+                limitesAntiGrav.height
+            );
+        }
+
 
         // gravedad (rotando)
         if (gravedadActiva && recursos.fuerzaGravitacional != null) {
@@ -510,7 +618,10 @@ public class EscenaJuego implements Escena {
         float baseH = recursos.naveJugador.getHeight() * escala;
 
         if (vidaJugador > 0) {
-            if (escudoActivo) {
+
+            // 1) Escudo tiene prioridad visual
+            if (escudoActivo && recursos.naveConEscudo != null) {
+
                 float w = baseW * multiplicadorEscudo;
                 float h = baseH * multiplicadorEscudo;
 
@@ -518,12 +629,24 @@ public class EscenaJuego implements Escena {
                 float drawY = y - (h - baseH) / 2f;
 
                 batch.draw(recursos.naveConEscudo, drawX, drawY, w, h);
-            } else {
+
+                // 2) Antigravedad (misma escala que escudo)
+            } else if (antiGravedadActiva && recursos.naveAntigravitacional != null) {
+
+                float w = baseW * multiplicadorAntiGrav;
+                float h = baseH * multiplicadorAntiGrav;
+
+                float drawX = x - (w - baseW) / 2f;
+                float drawY = y - (h - baseH) / 2f;
+
+                batch.draw(recursos.naveAntigravitacional, drawX, drawY, w, h);
+            }
+            else {
                 batch.draw(recursos.naveJugador, x, y, baseW, baseH);
             }
         }
+        batch.setColor(1f, 1f, 1f, 1f);
 
-        // explosiones
         for (Explosion ex : explosiones) {
             float a = ex.alpha();
             float s = ex.escalaPop();
@@ -535,16 +658,20 @@ public class EscenaJuego implements Escena {
 
             float cx = ex.x + ex.size / 2f;
             float cy = ex.y + ex.size / 2f;
+
             float drawX = cx - drawW / 2f;
             float drawY = cy - drawH / 2f;
 
             batch.draw(recursos.explosion, drawX, drawY, drawW, drawH);
-            batch.setColor(1f, 1f, 1f, 1f);
         }
+
+        batch.setColor(1f, 1f, 1f, 1f);
 
         // HUD
         dibujarVidas(batch);
         dibujarPuntuacion(batch);
+        dibujarBarraAntiGravedad(batch);
+
 
         // touchpad
         if (EstadoJuego.multitouchActivado) dibujarTouchpad(batch);
@@ -613,6 +740,42 @@ public class EscenaJuego implements Escena {
 
         fuente.getData().setScale(1.0f);
     }
+    private void dibujarBarraAntiGravedad(SpriteBatch batch) {
+        if (!antiGravedadActiva) return;
+        if (duracionAntiGrav <= 0f) return;
+
+        float progreso = MathUtils.clamp(timerAntiGrav / duracionAntiGrav, 0f, 1f);
+
+        // Fondo (oscuro)
+        batch.setColor(0f, 0f, 0f, 0.55f);
+        batch.draw(recursos.pixelBlanco, barraAntiX, barraAntiY, barraAntiW, barraAntiH);
+
+        // Marco
+        batch.setColor(1f, 1f, 1f, 0.85f);
+        batch.draw(recursos.pixelBlanco, barraAntiX, barraAntiY, barraAntiW, 2f);
+        batch.draw(recursos.pixelBlanco, barraAntiX, barraAntiY + barraAntiH - 2f, barraAntiW, 2f);
+        batch.draw(recursos.pixelBlanco, barraAntiX, barraAntiY, 2f, barraAntiH);
+        batch.draw(recursos.pixelBlanco, barraAntiX + barraAntiW - 2f, barraAntiY, 2f, barraAntiH);
+
+        // Relleno (morado)
+        float innerX = barraAntiX + barraPadding;
+        float innerY = barraAntiY + barraPadding;
+        float innerW = (barraAntiW - barraPadding * 2f) * progreso;
+        float innerH = barraAntiH - barraPadding * 2f;
+
+        batch.setColor(0.70f, 0.25f, 1f, 0.90f);
+        batch.draw(recursos.pixelBlanco, innerX, innerY, innerW, innerH);
+
+        // Parpadeo cuando queda poco
+        if (timerAntiGrav <= 1.2f) {
+            float blink = (float) (0.35f + 0.35f * Math.sin(timerAntiGrav * 18f));
+            batch.setColor(1f, 1f, 1f, blink);
+            batch.draw(recursos.pixelBlanco, barraAntiX, barraAntiY, barraAntiW, barraAntiH);
+        }
+
+        batch.setColor(1f, 1f, 1f, 1f);
+    }
+
 
     // ====================== SPAWNS / UTIL ======================
 
@@ -658,6 +821,16 @@ public class EscenaJuego implements Escena {
 
         limitesVidaItem = new Rectangle(vidaItemX, vidaItemY, size, size);
     }
+    private void spawnItemAntiGravedad() {
+        antiGravedadVisible = true;
+
+        float size = 90f;
+        antiGravX = MathUtils.random(40f, Main.ANCHO_MUNDO - size - 40f);
+        antiGravY = Main.ALTO_MUNDO + size;
+
+        limitesAntiGrav = new Rectangle(antiGravX, antiGravY, size, size);
+    }
+
 
     private void activarScorePop() {
         timerScorePop = SCORE_POP_DURATION;

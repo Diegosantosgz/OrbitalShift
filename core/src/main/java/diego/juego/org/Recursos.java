@@ -30,6 +30,12 @@ public class Recursos {
     public Texture iconoVida;
 
     public Texture fuerzaGravitacional;
+    // Items
+    public Texture itemAntigravitacional;
+
+    public Texture naveAntigravitacional;
+
+
     public Texture iconoPuntuacion;
 
     // UI
@@ -44,6 +50,8 @@ public class Recursos {
     public Sound sfxEscudo;
     public Sound sfxRomperEscudo;
     public Sound sfxCuracion;
+    public Sound sfxAntiGravedad;
+
 
     public void cargar() {
         // Texturas
@@ -63,6 +71,11 @@ public class Recursos {
         naveConEscudo = new Texture("nave_escudo.png");
 
         fuerzaGravitacional = new Texture("fuerza_gravitacional.png");
+        itemAntigravitacional = new Texture("esfera_antigravitacional.png");
+        naveAntigravitacional = new Texture("nave_antigravitacional.png");
+
+
+
         iconoPuntuacion = new Texture("estrella_record.png");
 
         touchpad = new Texture("touchpad.png");
@@ -81,6 +94,9 @@ public class Recursos {
         sfxEscudo = Gdx.audio.newSound(Gdx.files.internal("sonido_recoger_escudo.ogg"));
         sfxRomperEscudo = Gdx.audio.newSound(Gdx.files.internal("sonido_romperse_escudo.ogg"));
         sfxCuracion = Gdx.audio.newSound(Gdx.files.internal("sonido_curacion.ogg"));
+        sfxAntiGravedad = Gdx.audio.newSound(Gdx.files.internal("sonido_esfera_antigravitacional.ogg"));
+
+
     }
 
     private Texture crearPixelBlanco() {
@@ -114,6 +130,8 @@ public class Recursos {
 
         liberarTex(touchpad);
         liberarTex(pixelBlanco);
+        liberarTex(naveAntigravitacional);
+
 
         // Audio
         if (musicaFondo != null) musicaFondo.dispose();
@@ -121,9 +139,12 @@ public class Recursos {
         liberarSfx(sfxDisparo);
         liberarSfx(sfxExplosion);
         liberarSfx(sfxGravedad);
+        liberarTex(itemAntigravitacional);
         liberarSfx(sfxEscudo);
         liberarSfx(sfxRomperEscudo);
         liberarSfx(sfxCuracion);
+        liberarSfx(sfxAntiGravedad);
+
     }
 
     private void liberarTex(Texture t) {
