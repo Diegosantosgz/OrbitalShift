@@ -65,8 +65,8 @@ public class Main extends ApplicationAdapter {
 
     private float padBaseX = 0f, padBaseY = 0f;   // centro del pad
     private float padKnobX = 0f, padKnobY = 0f;   // centro del knob
-    private float padRadius = 140f;               // radio base (ajusta)
-    private float padKnobRadius = 55f;            // radio knob (ajusta)
+    private float padRadius = 155f;               // radio base (ajusta)
+    private float padKnobRadius = 60f;            // radio knob (ajusta)
 
     private float touchpadMaxSpeed = 650f;        // velocidad máx (ajusta)
     private float padDx = 0f, padDy = 0f;         // dirección normalizada [-1..1]
@@ -92,6 +92,12 @@ public class Main extends ApplicationAdapter {
     private float sfxVolume = 0.1f;
 
     private Texture laserVerde;
+
+
+
+    // ===== TEXTURAS TOUCHPAD =====
+    private Texture touchpadTex;      // touchpad.png (círculo)
+
 
     // ===== OPTIONS: MULTITOUCH =====
     private boolean multitouchEnabled = true;   // por defecto ON
@@ -330,6 +336,9 @@ public class Main extends ApplicationAdapter {
             Gdx.files.internal("sonido_romperse_escudo.ogg"));
         sfxCuracion = Gdx.audio.newSound(Gdx.files.internal("sonido_curacion.ogg"));
 
+        touchpadTex = new Texture("touchpad.png");
+
+
 
 
 
@@ -519,6 +528,12 @@ public class Main extends ApplicationAdapter {
         drawParallaxLayer(fondoMuyLejano, oMuy);
         drawParallaxLayer(fondoLejano, oLej);
         drawParallaxLayer(fondoCercano, oCer);
+
+        // Touchpad dinámico (solo en juego y solo si multitouch está ON)
+        if (state == GameState.PLAYING && multitouchEnabled) {
+            drawTouchpad();
+        }
+
 
         // ===== MENÚ / PANTALLAS =====
         if (state == GameState.MENU) {
@@ -1124,8 +1139,16 @@ public class Main extends ApplicationAdapter {
             // si toca el botón -> toggle y se queda
             if (btnToggleMultitouch.contains(worldX, worldY)) {
                 multitouchEnabled = !multitouchEnabled;
+
+                // reset del touchpad para que no se quede pillado
+                touchpadActive = false;
+                movePointer = -1;
+                padDx = 0f;
+                padDy = 0f;
+
                 return;
             }
+
             // si toca fuera -> volver al menú
             state = GameState.MENU;
             return;
@@ -1170,19 +1193,20 @@ public class Main extends ApplicationAdapter {
     }
     private void drawTouchpad() {
         if (!touchpadActive) return;
+        if (touchpadTex == null) return;
 
-        // base (círculo grande) usando whitePixel como "cuadrado"
-        batch.setColor(1f, 1f, 1f, 0.18f);
+        // Base (círculo grande)
+        batch.setColor(1f, 1f, 1f, 0.48f);
         batch.draw(
-            whitePixel,
+            touchpadTex,
             padBaseX - padRadius, padBaseY - padRadius,
             padRadius * 2f, padRadius * 2f
         );
 
-        // knob (círculo pequeño)
-        batch.setColor(1f, 1f, 1f, 0.35f);
+        // Knob (círculo pequeño) -> usamos el mismo sprite
+        batch.setColor(1f, 1f, 1f, 0.75f);
         batch.draw(
-            whitePixel,
+            touchpadTex,
             padKnobX - padKnobRadius, padKnobY - padKnobRadius,
             padKnobRadius * 2f, padKnobRadius * 2f
         );
@@ -1404,6 +1428,7 @@ public class Main extends ApplicationAdapter {
         if (sfxEscudo != null) sfxEscudo.dispose();
         if (sfxRomperEscudo != null) sfxRomperEscudo.dispose();
         if (sfxCuracion != null) sfxCuracion.dispose();
+        if (touchpadTex != null) touchpadTex.dispose();
 
     }
 }
