@@ -45,7 +45,7 @@ public class EscenaJuego implements Escena {
     private float timerSpawnAntiGrav = 0f;
     private float delaySpawnAntiGrav = 18f;
 
-    private float duracionAntiGrav = 6f;
+    private float duracionAntiGrav = 15f;
     private float timerAntiGrav = 0f;
 
     private Rectangle limitesAntiGrav;
@@ -99,7 +99,7 @@ public class EscenaJuego implements Escena {
     private final float barraAntiW = 520f;
     private final float barraAntiH = 18f;
     private final float barraAntiX = (Main.ANCHO_MUNDO - barraAntiW) / 2f;
-    private final float barraAntiY = Main.ALTO_MUNDO - 150f; // Barra duracion antigravedad debajo del marcador
+    private final float barraAntiY = Main.ALTO_MUNDO - 1850f; // Barra duracion antigravedad debajo del marcador
     private final float barraPadding = 4f;
 
 
