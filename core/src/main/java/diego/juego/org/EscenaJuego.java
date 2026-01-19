@@ -1,5 +1,7 @@
 package diego.juego.org;
 
+
+
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.audio.Sound;
@@ -23,6 +25,13 @@ public class EscenaJuego implements Escena {
     private final Recursos recursos;
     private final Viewport viewport;
     private final GestorEscenas gestorEscenas;
+
+
+    // ===== PROPULSIÓN =====
+    private float empuje = 0f;          // 0 = parado, 1 = empuje máximo
+    private float empujeSubida = 2.0f;  // tarda ~0.5s en llegar a 1
+    private float empujeBajada = 4.0f;  // vuelve rápido a idle
+
 
     // Módulos
     private final Parallax parallax = new Parallax();
@@ -296,6 +305,14 @@ public class EscenaJuego implements Escena {
             x += dx * velocidad * delta;
             y += dy * velocidad * delta;
         }
+        boolean enMovimiento = Math.abs(dx) > 0.01f || Math.abs(dy) > 0.01f;
+
+        if (enMovimiento) {
+            empuje = Math.min(1f, empuje + empujeSubida * delta);
+        } else {
+            empuje = Math.max(0f, empuje - empujeBajada * delta);
+        }
+
 
 
         // ===== gravedad: arrastre lateral =====
@@ -613,6 +630,7 @@ public class EscenaJuego implements Escena {
         for (BalaEnemigo b : balasEnemigas) batch.draw(recursos.laserRojo, b.x, b.y, b.w, b.h);
         for (BalaJugador b : balasJugador) batch.draw(recursos.laserVerde, b.x, b.y, b.w, b.h);
 
+
         // jugador
         float baseW = recursos.naveJugador.getWidth() * escala;
         float baseH = recursos.naveJugador.getHeight() * escala;
@@ -628,9 +646,11 @@ public class EscenaJuego implements Escena {
                 float drawX = x - (w - baseW) / 2f;
                 float drawY = y - (h - baseH) / 2f;
 
+                dibujarPropulsionDoble(batch, drawX, drawY, w, h, baseW, baseH);
                 batch.draw(recursos.naveConEscudo, drawX, drawY, w, h);
 
-                // 2) Antigravedad (misma escala que escudo)
+
+                // 2) Antigravedad
             } else if (antiGravedadActiva && recursos.naveAntigravitacional != null) {
 
                 float w = baseW * multiplicadorAntiGrav;
@@ -639,12 +659,18 @@ public class EscenaJuego implements Escena {
                 float drawX = x - (w - baseW) / 2f;
                 float drawY = y - (h - baseH) / 2f;
 
+                dibujarPropulsionDoble(batch, drawX, drawY, w, h, baseW, baseH);
                 batch.draw(recursos.naveAntigravitacional, drawX, drawY, w, h);
-            }
-            else {
+
+
+                // 3) Normal
+            } else {
+                dibujarPropulsionDoble(batch, x, y, baseW, baseH, baseW, baseH);
                 batch.draw(recursos.naveJugador, x, y, baseW, baseH);
+
             }
         }
+
         batch.setColor(1f, 1f, 1f, 1f);
 
         for (Explosion ex : explosiones) {
@@ -671,6 +697,12 @@ public class EscenaJuego implements Escena {
         dibujarVidas(batch);
         dibujarPuntuacion(batch);
         dibujarBarraAntiGravedad(batch);
+
+
+
+
+
+
 
 
         // touchpad
@@ -775,6 +807,33 @@ public class EscenaJuego implements Escena {
 
         batch.setColor(1f, 1f, 1f, 1f);
     }
+    private void dibujarPropulsionDoble(
+        SpriteBatch batch,
+        float naveX, float naveY,      // posición real donde se dibuja la nave
+        float naveW, float naveH,      // tamaño real donde se dibuja la nave (para colocar)
+        float baseW, float baseH       // tamaño base (para que la llama NO crezca con escudo/anti)
+    ) {
+        Texture tex = (empuje <= 0.02f) ? recursos.propulsionEstatica : recursos.propulsionRoja;
+        if (tex == null) return;
+
+        // === TAMAÑO (SIEMPRE BASE) ===
+        float w = baseW * 1.5f;
+        float hBase = baseH * 4.0f;
+
+        float h = hBase;
+        if (empuje > 0.02f) {
+            float escalaY = 1.0f + empuje * 2.0f;
+            h = hBase * escalaY;
+        }
+
+        // === POSICIÓN (USANDO NAVE REAL) ===
+        float drawX = naveX + (naveW - w) / 2f;
+        float drawY = naveY - h * 0.50f; // ajusta si hace falta
+
+        batch.draw(tex, drawX, drawY, w, h);
+    }
+
+
 
 
     // ====================== SPAWNS / UTIL ======================

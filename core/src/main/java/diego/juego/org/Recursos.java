@@ -29,9 +29,15 @@ public class Recursos {
     public Texture naveConEscudo;
     public Texture iconoVida;
 
-    public Texture fuerzaGravitacional;
-    // Items
     public Texture itemAntigravitacional;
+
+    // Propulsion
+    public Texture propulsionEstatica;
+    public Texture propulsionRoja;
+
+
+    public Texture fuerzaGravitacional;
+
 
     public Texture naveAntigravitacional;
 
@@ -60,6 +66,9 @@ public class Recursos {
         fondoCercano   = new Texture("fondo_cercano_nuevo.png");
 
         naveJugador = new Texture("x-wingHDCenital.png");
+        propulsionEstatica = new Texture("propulsion_estatica.png");
+        propulsionRoja = new Texture("propulsion_larga.png");
+
         enemigoNormal = new Texture("enemigo_normal.png");
         laserVerde = new Texture("laser_verde.png");
         laserRojo  = new Texture("laser_rojo.png");
@@ -73,6 +82,7 @@ public class Recursos {
         fuerzaGravitacional = new Texture("fuerza_gravitacional.png");
         itemAntigravitacional = new Texture("esfera_antigravitacional.png");
         naveAntigravitacional = new Texture("nave_antigravitacional.png");
+
 
 
 
@@ -131,6 +141,9 @@ public class Recursos {
         liberarTex(touchpad);
         liberarTex(pixelBlanco);
         liberarTex(naveAntigravitacional);
+        liberarTex(propulsionEstatica);
+        liberarTex(propulsionRoja);
+
 
 
         // Audio
