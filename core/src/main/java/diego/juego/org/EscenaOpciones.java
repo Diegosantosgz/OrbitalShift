@@ -23,6 +23,9 @@ public class EscenaOpciones implements Escena {
 
     private final Rectangle btnToggleMultitouch;
 
+    private final Rectangle btnToggleVibracion;
+
+
     public EscenaOpciones(Recursos recursos, Viewport viewport, GestorEscenas gestorEscenas) {
         this.recursos = recursos;
         this.viewport = viewport;
@@ -31,9 +34,23 @@ public class EscenaOpciones implements Escena {
         this.fuente = new BitmapFont();
         this.layout = new GlyphLayout();
 
-        // Misma posición/tamaño que tenías en tu Main
-        this.btnToggleMultitouch = new Rectangle((Main.ANCHO_MUNDO - 720f) / 2f, 900f, 720f, 120f);
+        // Botón multitouch
+        this.btnToggleMultitouch = new Rectangle(
+            (Main.ANCHO_MUNDO - 720f) / 2f,
+            900f,
+            720f,
+            120f
+        );
+
+        // Botón vibración
+        this.btnToggleVibracion = new Rectangle(
+            (Main.ANCHO_MUNDO - 720f) / 2f,
+            720f,   // debajo del multitouch
+            720f,
+            120f
+        );
     }
+
 
     @Override
     public void alMostrar() {
@@ -64,6 +81,11 @@ public class EscenaOpciones implements Escena {
             EstadoJuego.multitouchActivado = !EstadoJuego.multitouchActivado;
             return;
         }
+        if (btnToggleVibracion.contains(x, y)) {
+            EstadoJuego.vibracionActivada = !EstadoJuego.vibracionActivada;
+            return;
+        }
+
 
         // Si toca fuera, volver al menú
         gestorEscenas.cambiarA(new EscenaMenu(recursos, viewport, gestorEscenas));
@@ -90,6 +112,16 @@ public class EscenaOpciones implements Escena {
             "MULTITOUCH: " + (EstadoJuego.multitouchActivado ? "ON" : "OFF"),
             EstadoJuego.multitouchActivado
         );
+
+
+
+// Botón vibración
+        dibujarBotonToggle(batch,
+            btnToggleVibracion,
+            "VIBRACIÓN: " + (EstadoJuego.vibracionActivada ? "ON" : "OFF"),
+            EstadoJuego.vibracionActivada
+        );
+
 
         // Ayuda
         fuente.getData().setScale(1.8f);

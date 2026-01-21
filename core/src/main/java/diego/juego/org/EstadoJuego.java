@@ -9,4 +9,6 @@ public final class EstadoJuego {
 
     }
     public static boolean multitouchActivado = true;
+
+    public static boolean vibracionActivada = true;
 }

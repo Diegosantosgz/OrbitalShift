@@ -305,9 +305,10 @@ public class EscenaJuego implements Escena {
             x += dx * velocidad * delta;
             y += dy * velocidad * delta;
         }
-        boolean enMovimiento = Math.abs(dx) > 0.01f || Math.abs(dy) > 0.01f;
+        // Solo empuja cuando vas hacia ARRIBA (dy > 0)
+        boolean empujandoArriba = dy > 0.05f; // ajusta el 0.05 si quieres más/menos sensibilidad
 
-        if (enMovimiento) {
+        if (empujandoArriba) {
             empuje = Math.min(1f, empuje + empujeSubida * delta);
         } else {
             empuje = Math.max(0f, empuje - empujeBajada * delta);
@@ -913,12 +914,17 @@ public class EscenaJuego implements Escena {
     }
 
     private void vibrarGolpe() {
+        if (!EstadoJuego.vibracionActivada) return;
+
         try {
             if (Main.services != null) Main.services.vibrar(120);
         } catch (Throwable ignored) {}
     }
 
+
     private void vibrarMuerte() {
+        if (!EstadoJuego.vibracionActivada) return;
+
         try {
             if (Main.services != null) {
                 Main.services.vibrar(450);
@@ -927,11 +933,17 @@ public class EscenaJuego implements Escena {
         } catch (Throwable ignored) {}
     }
 
-    @Override public void alRedimensionar(int ancho, int alto) { }
-    @Override public void alOcultar() { }
+
+    @Override public void alRedimensionar(int ancho, int alto) {
+
+    }
+    @Override public void alOcultar() {
+
+    }
 
     @Override
     public void liberar() {
         fuente.dispose();
+
     }
 }
