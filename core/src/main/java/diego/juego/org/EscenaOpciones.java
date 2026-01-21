@@ -9,9 +9,8 @@ import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.viewport.Viewport;
 
-/**
- * Escena de opciones: permite activar/desactivar el multitouch.
- */
+
+
 public class EscenaOpciones implements Escena {
 
     private final Recursos recursos;
@@ -119,8 +118,19 @@ public class EscenaOpciones implements Escena {
 
         if (btnToggleSfx.contains(x, y)) {
             EstadoJuego.sfxActivados = !EstadoJuego.sfxActivados;
+
+            if (!EstadoJuego.sfxActivados) {
+                if (recursos.sfxDisparo != null) recursos.sfxDisparo.stop();
+                if (recursos.sfxExplosion != null) recursos.sfxExplosion.stop();
+                if (recursos.sfxGravedad != null) recursos.sfxGravedad.stop();
+                if (recursos.sfxEscudo != null) recursos.sfxEscudo.stop();
+                if (recursos.sfxRomperEscudo != null) recursos.sfxRomperEscudo.stop();
+                if (recursos.sfxCuracion != null) recursos.sfxCuracion.stop();
+                if (recursos.sfxAntiGravedad != null) recursos.sfxAntiGravedad.stop();
+            }
             return;
         }
+
 
 
         // Si toca fuera, volver al menú
