@@ -231,7 +231,16 @@ public class EscenaJuego implements Escena {
     }
 
     @Override
-    public void alMostrar() { }
+    public void alMostrar() {
+        if (EstadoJuego.musicaActivada) {
+            if (!recursos.musicaFondo.isPlaying()) {
+                recursos.musicaFondo.play();
+            }
+        } else {
+            recursos.musicaFondo.pause();
+        }
+    }
+
 
     @Override
     public void actualizar(float delta) {
@@ -903,15 +912,19 @@ public class EscenaJuego implements Escena {
     }
 
     private void reproducirExplosionAleatoria() {
+        if (!EstadoJuego.sfxActivados) return;
         if (recursos.sfxExplosion == null) return;
+
         float vol = 0.75f + MathUtils.random(0.15f);
         float pitch = 0.90f + MathUtils.random(0.20f);
         recursos.sfxExplosion.play(vol, pitch, 0f);
     }
 
     private void reproducir(Sound s, float vol) {
+        if (!EstadoJuego.sfxActivados) return;
         if (s != null) s.play(vol);
     }
+
 
     private void vibrarGolpe() {
         if (!EstadoJuego.vibracionActivada) return;

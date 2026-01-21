@@ -11,4 +11,10 @@ public final class EstadoJuego {
     public static boolean multitouchActivado = true;
 
     public static boolean vibracionActivada = true;
+
+    public static boolean musicaActivada = true;
+
+    public static boolean sfxActivados = true;
+
+
 }

@@ -25,6 +25,12 @@ public class EscenaOpciones implements Escena {
 
     private final Rectangle btnToggleVibracion;
 
+    private final Rectangle btnToggleMusica;
+
+    private final Rectangle btnToggleSfx;
+
+
+
 
     public EscenaOpciones(Recursos recursos, Viewport viewport, GestorEscenas gestorEscenas) {
         this.recursos = recursos;
@@ -49,6 +55,21 @@ public class EscenaOpciones implements Escena {
             720f,
             120f
         );
+        // Botón música
+        this.btnToggleMusica = new Rectangle(
+            (Main.ANCHO_MUNDO - 720f) / 2f,
+            540f,   // debajo de vibración (ajusta si quieres)
+            720f,
+            120f
+        );
+        // boton efectos de sonido
+        this.btnToggleSfx = new Rectangle(
+            (Main.ANCHO_MUNDO - 720f) / 2f,
+            360f,   // debajo de música (ajusta si quieres)
+            720f,
+            120f
+        );
+
     }
 
 
@@ -85,6 +106,21 @@ public class EscenaOpciones implements Escena {
             EstadoJuego.vibracionActivada = !EstadoJuego.vibracionActivada;
             return;
         }
+        if (btnToggleMusica.contains(x, y)) {
+            EstadoJuego.musicaActivada = !EstadoJuego.musicaActivada;
+
+            if (EstadoJuego.musicaActivada) {
+                recursos.musicaFondo.play();
+            } else {
+                recursos.musicaFondo.pause();
+            }
+            return;
+        }
+
+        if (btnToggleSfx.contains(x, y)) {
+            EstadoJuego.sfxActivados = !EstadoJuego.sfxActivados;
+            return;
+        }
 
 
         // Si toca fuera, volver al menú
@@ -114,6 +150,12 @@ public class EscenaOpciones implements Escena {
         );
 
 
+// Botón música
+        dibujarBotonToggle(batch,
+            btnToggleMusica,
+            "MÚSICA: " + (EstadoJuego.musicaActivada ? "ON" : "OFF"),
+            EstadoJuego.musicaActivada
+        );
 
 // Botón vibración
         dibujarBotonToggle(batch,
@@ -122,13 +164,18 @@ public class EscenaOpciones implements Escena {
             EstadoJuego.vibracionActivada
         );
 
+        dibujarBotonToggle(batch,
+            btnToggleSfx,
+            "SFX: " + (EstadoJuego.sfxActivados ? "ON" : "OFF"),
+            EstadoJuego.sfxActivados
+        );
 
         // Ayuda
         fuente.getData().setScale(1.8f);
-        dibujarTextoCentrado(batch, "Toca el botón para cambiar", Main.ANCHO_MUNDO / 2f, 650f);
-        dibujarTextoCentrado(batch, "BACK para volver", Main.ANCHO_MUNDO / 2f, 360f);
-
+        dibujarTextoCentrado(batch, "Toca el botón para cambiar", Main.ANCHO_MUNDO / 2f, 250f);
+        dibujarTextoCentrado(batch, "BACK para volver", Main.ANCHO_MUNDO / 2f, 140f);
         fuente.getData().setScale(1.0f);
+
     }
 
     private void dibujarBotonToggle(SpriteBatch batch, Rectangle r, String texto, boolean activado) {

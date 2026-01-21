@@ -58,8 +58,13 @@ public class EscenaMenu implements Escena {
 
     @Override
     public void alMostrar() {
-        // Nada especial por ahora
+        if (EstadoJuego.musicaActivada) {
+            recursos.musicaFondo.play();
+        } else {
+            recursos.musicaFondo.pause();
+        }
     }
+
 
     @Override
     public void actualizar(float delta) {
