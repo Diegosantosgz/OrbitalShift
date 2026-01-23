@@ -35,7 +35,7 @@ public class Recursos {
     public Texture propulsionEstatica;
     public Texture propulsionRoja;
 
-
+    // Gravedad
     public Texture fuerzaGravitacional;
 
 

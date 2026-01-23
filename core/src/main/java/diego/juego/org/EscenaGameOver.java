@@ -54,9 +54,12 @@ public class EscenaGameOver implements Escena {
         viewport.unproject(v);
 
         if (btnReintentar.contains(v.x, v.y)) {
+            EstadoJuego.nivelActual = 1;
             gestorEscenas.cambiarA(new EscenaJuego(recursos, viewport, gestorEscenas));
+            return;
         } else if (btnSalir.contains(v.x, v.y)) {
             Gdx.app.exit();
+            return;
         }
     }
 

@@ -26,6 +26,11 @@ public class EscenaJuego implements Escena {
     private final Viewport viewport;
     private final GestorEscenas gestorEscenas;
 
+    private static final int PUNTOS_NIVEL_1 = 3000;
+    private boolean victoriaLanzada = false;
+
+
+
 
     // ===== PROPULSIÓN =====
     private float empuje = 0f;          // 0 = parado, 1 = empuje máximo
@@ -164,6 +169,8 @@ public class EscenaJuego implements Escena {
 
         inicializar();
         reiniciarPartida();
+
+
     }
 
     private void inicializar() {
@@ -256,6 +263,14 @@ public class EscenaJuego implements Escena {
     }
 
     private void actualizarJuego(float delta) {
+        if (!victoriaLanzada && EstadoJuego.nivelActual == 1 && puntuacion >= PUNTOS_NIVEL_1) {
+            victoriaLanzada = true;
+            gestorEscenas.cambiarA(
+                new EscenaVictoria(recursos, viewport, gestorEscenas, puntuacion)
+            );
+            return;
+        }
+
         if (vidaJugador <= 0) return;
 
         float dx = 0f, dy = 0f;
@@ -849,6 +864,18 @@ public class EscenaJuego implements Escena {
     // ====================== SPAWNS / UTIL ======================
 
     private void spawnEnemigo() {
+        if (EstadoJuego.nivelActual == 1) {
+            spawnEnemigoBasico();
+        } else if (EstadoJuego.nivelActual == 2) {
+            // Ejemplo: 70% básico + 30% nuevo
+            if (MathUtils.random() < 0.7f) spawnEnemigoBasico();
+            else spawnEnemigoNuevo1();
+        } else {
+            spawnEnemigoBasico();
+        }
+    }
+
+    private void spawnEnemigoBasico() {
         float eW = recursos.enemigoNormal.getWidth() * escala;
         float eH = recursos.enemigoNormal.getHeight() * escala;
 
@@ -858,6 +885,12 @@ public class EscenaJuego implements Escena {
         float delayDisparo = MathUtils.random(0.9f, 1.7f);
         enemigos.add(new Enemigo(spawnX, spawnY, eW, eH, delayDisparo));
     }
+
+    private void spawnEnemigoNuevo1() {
+        // Por ahora, para que compile: spawnea un básico (luego lo cambias por el nuevo enemigo real)
+        spawnEnemigoBasico();
+    }
+
 
     private void spawnPozoGravitatorio() {
         gravedadActiva = true;

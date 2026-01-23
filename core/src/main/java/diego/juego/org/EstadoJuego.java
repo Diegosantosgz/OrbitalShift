@@ -16,5 +16,8 @@ public final class EstadoJuego {
 
     public static boolean sfxActivados = true;
 
+    public static int nivelActual = 1;
+
+
 
 }
