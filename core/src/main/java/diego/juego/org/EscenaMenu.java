@@ -19,7 +19,10 @@ public class EscenaMenu implements Escena {
     private final GestorEscenas gestorEscenas;
 
     // UI
-    private Rectangle btnJugar, btnOpciones, btnCreditos, btnAyuda, btnSalir;
+    private Rectangle btnJugar, btnOpciones, btnCreditos, btnAyuda, btnRecords, btnSalir;
+
+
+
 
     // Texto
     private final BitmapFont fuente;
@@ -53,7 +56,8 @@ public class EscenaMenu implements Escena {
         btnOpciones = new Rectangle(x0, startY - (altoBoton+separacion) * 1f, anchoBoton, altoBoton);
         btnCreditos = new Rectangle(x0, startY - (altoBoton+separacion) * 2f, anchoBoton, altoBoton);
         btnAyuda    = new Rectangle(x0, startY - (altoBoton+separacion) * 3f, anchoBoton, altoBoton);
-        btnSalir    = new Rectangle(x0, startY - (altoBoton+separacion) * 4f, anchoBoton, altoBoton);
+        btnRecords  = new Rectangle(x0, startY - (altoBoton+separacion) * 4f, anchoBoton, altoBoton);
+        btnSalir    = new Rectangle(x0, startY - (altoBoton+separacion) * 5f, anchoBoton, altoBoton);
     }
 
     @Override
@@ -116,6 +120,11 @@ public class EscenaMenu implements Escena {
             gestorEscenas.cambiarA(new EscenaAyuda(recursos, viewport, gestorEscenas));
             return;
         }
+        if (btnRecords.contains(x, y)) {
+            gestorEscenas.cambiarA(new EscenaRecords(recursos, viewport, gestorEscenas));
+            return;
+        }
+
 
         if (btnSalir.contains(x, y)) {
             Gdx.app.exit();
@@ -135,11 +144,21 @@ public class EscenaMenu implements Escena {
         fuente.getData().setScale(7.0f);
         dibujarTextoCentrado(batch, "ORBITAL SHIFT", Main.ANCHO_MUNDO / 2f, 1520f);
 
+        fuente.getData().setScale(2.2f);
+        dibujarTextoCentrado(batch,
+            "RÉCORD: " + EstadoJuego.topNames[0] + " " + EstadoJuego.topScores[0],
+            Main.ANCHO_MUNDO / 2f,
+            1400f
+        );
+
+
+
         // Botones
         fuente.getData().setScale(2.2f);
         dibujarBoton(batch, btnJugar, "JUGAR");
         dibujarBoton(batch, btnOpciones, "OPCIONES");
         dibujarBoton(batch, btnCreditos, "CRÉDITOS");
+        dibujarBoton(batch, btnRecords, "RECORDS");
         dibujarBoton(batch, btnAyuda, "AYUDA");
         dibujarBoton(batch, btnSalir, "SALIR");
 

@@ -39,7 +39,20 @@ public class EscenaGameOver implements Escena {
         btnSalir      = new Rectangle((Main.ANCHO_MUNDO - bw) / 2f, 540f, bw, bh);
     }
 
-    @Override public void alMostrar() { }
+    @Override
+    public void alMostrar() {
+        final int score = puntuacionFinal;
+
+        if (EstadoJuego.entraEnTop10(score)) {
+            gestorEscenas.cambiarA(new EscenaNuevoRecord(recursos, viewport, gestorEscenas, score, new Runnable() {
+                @Override public void run() {
+                    // volver al GameOver ya con récord guardado
+                    gestorEscenas.cambiarA(new EscenaGameOver(recursos, viewport, gestorEscenas, puntuacionFinal));
+                }
+            }));
+        }
+    }
+
 
     @Override
     public void actualizar(float delta) {
@@ -54,14 +67,30 @@ public class EscenaGameOver implements Escena {
         viewport.unproject(v);
 
         if (btnReintentar.contains(v.x, v.y)) {
-            EstadoJuego.nivelActual = 1;
-            gestorEscenas.cambiarA(new EscenaJuego(recursos, viewport, gestorEscenas));
-            return;
-        } else if (btnSalir.contains(v.x, v.y)) {
-            Gdx.app.exit();
+            final int score = puntuacionFinal;
+
+            if (btnSalir.contains(v.x, v.y)) {
+                Gdx.app.exit();
+                return;
+            }
+
+            if (EstadoJuego.entraEnTop10(score)) {
+                gestorEscenas.cambiarA(new EscenaNuevoRecord(recursos, viewport, gestorEscenas, score, new Runnable() {
+                    @Override public void run() {
+                        EstadoJuego.nivelActual = 1;
+                        gestorEscenas.cambiarA(new EscenaJuego(recursos, viewport, gestorEscenas));
+                    }
+                }));
+            } else {
+                EstadoJuego.nivelActual = 1;
+                gestorEscenas.cambiarA(new EscenaJuego(recursos, viewport, gestorEscenas));
+            }
             return;
         }
+
     }
+
+
 
     @Override
     public void dibujar(SpriteBatch batch) {
@@ -88,6 +117,14 @@ public class EscenaGameOver implements Escena {
 
         fuente.getData().setScale(3.2f);
         dibujarTextoCentrado(batch, "Puntuación: " + puntuacionFinal, Main.ANCHO_MUNDO / 2f, panelY + panelH - 250f);
+
+        fuente.getData().setScale(2.6f);
+        dibujarTextoCentrado(batch,
+            "MEJOR: " + EstadoJuego.getMejorNombre() + " " + EstadoJuego.getMejorScore(),
+            Main.ANCHO_MUNDO / 2f,
+            panelY + panelH - 320f);
+
+
 
         dibujarBoton(batch, btnReintentar, "REINTENTAR", true);
         dibujarBoton(batch, btnSalir, "SALIR", false);

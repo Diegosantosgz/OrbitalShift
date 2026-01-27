@@ -22,6 +22,9 @@ public class EscenaVictoria implements Escena {
         this.viewport = viewport;
         this.gestor = gestor;
         this.puntuacion = puntuacion;
+
+
+
     }
 
     @Override
