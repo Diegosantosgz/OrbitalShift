@@ -19,7 +19,7 @@ public class EscenaRecords implements Escena {
     private final GlyphLayout layout = new GlyphLayout();
 
     private final Rectangle btnVolver;
-    private final Rectangle btnReset; // opcional
+    private final Rectangle btnReset;
 
     public EscenaRecords(Recursos recursos, Viewport viewport, GestorEscenas gestor) {
         this.recursos = recursos;
@@ -27,11 +27,11 @@ public class EscenaRecords implements Escena {
         this.gestor = gestor;
 
         float bw = 520f, bh = 110f;
-        btnVolver = new Rectangle((Main.ANCHO_MUNDO - bw) / 2f, 220f, bw, bh);
-        btnReset  = new Rectangle((Main.ANCHO_MUNDO - bw) / 2f, 360f, bw, bh);
+        btnVolver = new Rectangle((Main.ANCHO_MUNDO - bw) / 2f, 90f, bw, bh);
+        btnReset  = new Rectangle((Main.ANCHO_MUNDO - bw) / 2f, 230f, bw, bh);
     }
 
-    @Override public void alMostrar() {}
+    @Override public void alMostrar() { }
 
     @Override
     public void actualizar(float delta) {
@@ -51,7 +51,7 @@ public class EscenaRecords implements Escena {
         }
 
         if (btnReset.contains(v.x, v.y)) {
-            EstadoJuego.resetTop();
+            EstadoJuego.resetTopScores(); // <-- OJO: usa el nombre real del método
             return;
         }
     }
@@ -67,14 +67,18 @@ public class EscenaRecords implements Escena {
         fuente.getData().setScale(6.0f);
         dibujarCentrado(batch, "RECORDS", 1500f);
 
-        // lista top 10
+        // lista top 10 (INICIALES + SCORE)
         fuente.getData().setScale(3.0f);
         float y = 1300f;
         float step = 92f;
 
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < EstadoJuego.MAX_SCORES; i++) {
+            String name = EstadoJuego.topNames[i];
             int score = EstadoJuego.topScores[i];
-            String linea = (i + 1) + ".  " + score;
+
+            if (name == null) name = "---";
+
+            String linea = (i + 1) + ".  " + name + "   " + score;
             dibujarCentrado(batch, linea, y);
             y -= step;
         }

@@ -41,17 +41,24 @@ public class EscenaGameOver implements Escena {
 
     @Override
     public void alMostrar() {
-        final int score = puntuacionFinal;
+        // Si el score entra en top10 y aún no se ha registrado, pedimos siglas UNA vez
+        if (EstadoJuego.entraEnTop10(puntuacionFinal) && !EstadoJuego.scoreYaRegistrado(puntuacionFinal)) {
 
-        if (EstadoJuego.entraEnTop10(score)) {
-            gestorEscenas.cambiarA(new EscenaNuevoRecord(recursos, viewport, gestorEscenas, score, new Runnable() {
-                @Override public void run() {
-                    // volver al GameOver ya con récord guardado
-                    gestorEscenas.cambiarA(new EscenaGameOver(recursos, viewport, gestorEscenas, puntuacionFinal));
+            gestorEscenas.cambiarA(new EscenaNuevoRecord(
+                recursos, viewport, gestorEscenas, puntuacionFinal,
+                new Runnable() {
+                    @Override public void run() {
+                        // marcar como ya guardado para que no lo pida otra vez
+                        EstadoJuego.marcarScoreRegistrado(puntuacionFinal);
+
+                        // volver al GameOver normal (con botones)
+                        gestorEscenas.cambiarA(new EscenaGameOver(recursos, viewport, gestorEscenas, puntuacionFinal));
+                    }
                 }
-            }));
+            ));
         }
     }
+
 
 
     @Override
@@ -69,11 +76,6 @@ public class EscenaGameOver implements Escena {
         if (btnReintentar.contains(v.x, v.y)) {
             final int score = puntuacionFinal;
 
-            if (btnSalir.contains(v.x, v.y)) {
-                Gdx.app.exit();
-                return;
-            }
-
             if (EstadoJuego.entraEnTop10(score)) {
                 gestorEscenas.cambiarA(new EscenaNuevoRecord(recursos, viewport, gestorEscenas, score, new Runnable() {
                     @Override public void run() {
@@ -87,6 +89,7 @@ public class EscenaGameOver implements Escena {
             }
             return;
         }
+
 
     }
 
@@ -118,11 +121,10 @@ public class EscenaGameOver implements Escena {
         fuente.getData().setScale(3.2f);
         dibujarTextoCentrado(batch, "Puntuación: " + puntuacionFinal, Main.ANCHO_MUNDO / 2f, panelY + panelH - 250f);
 
-        fuente.getData().setScale(2.6f);
-        dibujarTextoCentrado(batch,
-            "MEJOR: " + EstadoJuego.getMejorNombre() + " " + EstadoJuego.getMejorScore(),
-            Main.ANCHO_MUNDO / 2f,
-            panelY + panelH - 320f);
+        dibujarTextoCentrado(batch, "RÉCORD: " + EstadoJuego.getRecord(), Main.ANCHO_MUNDO / 2f, panelY + panelH - 320f);
+
+
+
 
 
 

@@ -3,6 +3,8 @@ package diego.juego.org;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Preferences;
 
+import java.util.Locale;
+
 public final class EstadoJuego {
     private EstadoJuego() {}
 
@@ -10,93 +12,87 @@ public final class EstadoJuego {
     public static boolean vibracionActivada = true;
     public static boolean musicaActivada = true;
     public static boolean sfxActivados = true;
-
     public static int nivelActual = 1;
+    public static int ultimoScoreRegistrado = -1;
 
-    // ===== TOP 10 ARCADE (score + 3 iniciales) =====
-    private static final String PREFS_NAME = "orbital_shift_prefs";
-    private static final String KEY_SCORE_PREFIX = "top_score_"; // 0..9
-    private static final String KEY_NAME_PREFIX  = "top_name_";  // 0..9
-    private static final int TOP_N = 10;
+    public static boolean scoreYaRegistrado(int score) {
+        return ultimoScoreRegistrado == score;
+    }
 
-    private static Preferences prefs;
+    public static void marcarScoreRegistrado(int score) {
+        ultimoScoreRegistrado = score;
+    }
 
-    public static int[] topScores = new int[TOP_N];
-    public static String[] topNames = new String[TOP_N]; // "AAA"
 
-    public static void cargar() {
-        if (prefs == null) prefs = Gdx.app.getPreferences(PREFS_NAME);
+    // ===== TOP 10 =====
+    public static final int MAX_SCORES = 10;
+    public static int[] topScores = new int[MAX_SCORES];
+    public static String[] topNames = new String[MAX_SCORES];
 
-        for (int i = 0; i < TOP_N; i++) {
-            topScores[i] = prefs.getInteger(KEY_SCORE_PREFIX + i, 0);
-            topNames[i]  = prefs.getString(KEY_NAME_PREFIX + i, "---");
+    private static final String PREFS = "orbital_shift_scores";
+
+    /** Llamar una vez al arrancar el juego (por ejemplo en Main.create()) */
+    public static void cargarScores() {
+        Preferences p = Gdx.app.getPreferences(PREFS);
+
+        for (int i = 0; i < MAX_SCORES; i++) {
+            topScores[i] = p.getInteger("score_" + i, 0);
+            topNames[i] = p.getString("name_" + i, "---");
             if (topNames[i] == null || topNames[i].trim().isEmpty()) topNames[i] = "---";
         }
     }
 
-    private static void guardar() {
-        if (prefs == null) prefs = Gdx.app.getPreferences(PREFS_NAME);
+    private static void guardarScores() {
+        Preferences p = Gdx.app.getPreferences(PREFS);
 
-        for (int i = 0; i < TOP_N; i++) {
-            prefs.putInteger(KEY_SCORE_PREFIX + i, topScores[i]);
-            prefs.putString(KEY_NAME_PREFIX + i, topNames[i] == null ? "---" : topNames[i]);
+        for (int i = 0; i < MAX_SCORES; i++) {
+            p.putInteger("score_" + i, topScores[i]);
+            p.putString("name_" + i, topNames[i]);
         }
-        prefs.flush();
+        p.flush();
     }
 
-    /** ¿Esta puntuación entra al Top 10? */
-    public static boolean entraEnTop10(int score) {
-        if (score <= 0) return false;
-        return score > topScores[TOP_N - 1];
-    }
-
-    /** Inserta score + iniciales (normaliza a 3 letras) y guarda. */
-    public static void insertarEnTop10(int score, String iniciales) {
-        if (score <= 0) return;
-
-        String name = normalizarIniciales(iniciales);
-
-        // si no entra, fuera
-        if (!entraEnTop10(score)) return;
-
-        for (int i = 0; i < TOP_N; i++) {
-            if (score > topScores[i]) {
-                // desplazar hacia abajo
-                for (int j = TOP_N - 1; j > i; j--) {
-                    topScores[j] = topScores[j - 1];
-                    topNames[j]  = topNames[j - 1];
-                }
-                topScores[i] = score;
-                topNames[i]  = name;
-                guardar();
-                return;
-            }
-        }
-    }
-
-    private static String normalizarIniciales(String s) {
-        if (s == null) s = "";
-        s = s.trim().toUpperCase();
-
-        // deja solo letras/números
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < s.length(); i++) {
-            char c = s.charAt(i);
-            if (Character.isLetterOrDigit(c)) sb.append(c);
-            if (sb.length() == 3) break;
-        }
-        while (sb.length() < 3) sb.append('-');
-        return sb.toString();
-    }
-
-    public static int getMejorScore() { return topScores[0]; }
-    public static String getMejorNombre() { return topNames[0]; }
-
-    public static void resetTop() {
-        for (int i = 0; i < TOP_N; i++) {
+    public static void resetTopScores() {
+        for (int i = 0; i < MAX_SCORES; i++) {
             topScores[i] = 0;
             topNames[i] = "---";
         }
-        guardar();
+        guardarScores();
+    }
+
+    /** Devuelve true si el score entra en el Top10 (comparando contra el peor). */
+    public static boolean entraEnTop10(int score) {
+        return score > topScores[MAX_SCORES - 1];
+    }
+
+    /** Inserta score + iniciales en el top10, ordena y guarda. */
+    public static void insertarScore(String iniciales, int score) {
+        if (iniciales == null) iniciales = "---";
+        iniciales = iniciales.trim().toUpperCase(Locale.ROOT);
+        if (iniciales.length() > 3) iniciales = iniciales.substring(0, 3);
+        while (iniciales.length() < 3) iniciales += "_"; // opcional: rellena
+
+        // busca posición
+        int pos = MAX_SCORES;
+        for (int i = 0; i < MAX_SCORES; i++) {
+            if (score > topScores[i]) { pos = i; break; }
+        }
+        if (pos >= MAX_SCORES) return;
+
+        // desplaza hacia abajo
+        for (int i = MAX_SCORES - 1; i > pos; i--) {
+            topScores[i] = topScores[i - 1];
+            topNames[i] = topNames[i - 1];
+        }
+
+        topScores[pos] = score;
+        topNames[pos] = iniciales;
+
+        guardarScores();
+    }
+
+    /** Convenience: récord (mejor score). */
+    public static int getRecord() {
+        return topScores[0];
     }
 }

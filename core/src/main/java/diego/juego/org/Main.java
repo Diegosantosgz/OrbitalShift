@@ -28,7 +28,8 @@ public class Main extends ApplicationAdapter {
 
     @Override
     public void create() {
-        EstadoJuego.cargar();
+        EstadoJuego.cargarScores();
+
         batch = new SpriteBatch();
 
         camara = new OrthographicCamera();
