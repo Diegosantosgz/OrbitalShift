@@ -146,7 +146,7 @@ public class EscenaMenu implements Escena {
 
         fuente.getData().setScale(2.2f);
         dibujarTextoCentrado(batch,
-            "RÉCORD: " + EstadoJuego.topNames[0] + " " + EstadoJuego.topScores[0],
+            "RÉCORD: " + EstadoJuego.getSiglas(0) + " " + EstadoJuego.getScore(0),
             Main.ANCHO_MUNDO / 2f,
             1400f
         );

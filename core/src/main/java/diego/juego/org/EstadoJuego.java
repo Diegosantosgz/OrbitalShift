@@ -3,8 +3,6 @@ package diego.juego.org;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Preferences;
 
-import java.util.Locale;
-
 public final class EstadoJuego {
     private EstadoJuego() {}
 
@@ -12,87 +10,114 @@ public final class EstadoJuego {
     public static boolean vibracionActivada = true;
     public static boolean musicaActivada = true;
     public static boolean sfxActivados = true;
+    public static boolean pidioSiglasEnEsteGameOver = false;
+
+
     public static int nivelActual = 1;
-    public static int ultimoScoreRegistrado = -1;
 
-    public static boolean scoreYaRegistrado(int score) {
-        return ultimoScoreRegistrado == score;
+    // ===== TOP 10 ARCADE =====
+    public static final int MAX_RECORDS = 10;
+
+    private static final int[] scores = new int[MAX_RECORDS];
+    private static final String[] siglas = new String[MAX_RECORDS];
+
+    private static final String PREFS = "orbitalshift_scores";
+
+
+    // NUEVO: para no pedir siglas 20 veces con el mismo score
+    private static int scoreSiglasYaPedidas = -1;
+
+    public static boolean yaSePidieronSiglasPara(int score) {
+        return scoreSiglasYaPedidas == score;
     }
 
-    public static void marcarScoreRegistrado(int score) {
-        ultimoScoreRegistrado = score;
+    public static void marcarSiglasPedidasPara(int score) {
+        scoreSiglasYaPedidas = score;
     }
 
 
-    // ===== TOP 10 =====
-    public static final int MAX_SCORES = 10;
-    public static int[] topScores = new int[MAX_SCORES];
-    public static String[] topNames = new String[MAX_SCORES];
-
-    private static final String PREFS = "orbital_shift_scores";
-
-    /** Llamar una vez al arrancar el juego (por ejemplo en Main.create()) */
-    public static void cargarScores() {
-        Preferences p = Gdx.app.getPreferences(PREFS);
-
-        for (int i = 0; i < MAX_SCORES; i++) {
-            topScores[i] = p.getInteger("score_" + i, 0);
-            topNames[i] = p.getString("name_" + i, "---");
-            if (topNames[i] == null || topNames[i].trim().isEmpty()) topNames[i] = "---";
+    static {
+        // defaults
+        for (int i = 0; i < MAX_RECORDS; i++) {
+            scores[i] = 0;
+            siglas[i] = "---";
         }
     }
 
-    private static void guardarScores() {
+    // ===== Persistencia =====
+    public static void cargarScores() {
         Preferences p = Gdx.app.getPreferences(PREFS);
+        for (int i = 0; i < MAX_RECORDS; i++) {
+            scores[i] = p.getInteger("score_" + i, 0);
+            siglas[i] = p.getString("siglas_" + i, "---");
+            if (siglas[i] == null || siglas[i].length() != 3) siglas[i] = "---";
+        }
+    }
+    public static void resetFlagsGameOver() {
+        pidioSiglasEnEsteGameOver = false;
+        scoreSiglasYaPedidas = -1;
+    }
 
-        for (int i = 0; i < MAX_SCORES; i++) {
-            p.putInteger("score_" + i, topScores[i]);
-            p.putString("name_" + i, topNames[i]);
+
+    public static void guardarScores() {
+        Preferences p = Gdx.app.getPreferences(PREFS);
+        for (int i = 0; i < MAX_RECORDS; i++) {
+            p.putInteger("score_" + i, scores[i]);
+            p.putString("siglas_" + i, siglas[i]);
         }
         p.flush();
     }
 
-    public static void resetTopScores() {
-        for (int i = 0; i < MAX_SCORES; i++) {
-            topScores[i] = 0;
-            topNames[i] = "---";
-        }
-        guardarScores();
-    }
-
-    /** Devuelve true si el score entra en el Top10 (comparando contra el peor). */
+    // ===== Lógica top 10 =====
     public static boolean entraEnTop10(int score) {
-        return score > topScores[MAX_SCORES - 1];
+        return score > scores[MAX_RECORDS - 1];
     }
 
-    /** Inserta score + iniciales en el top10, ordena y guarda. */
-    public static void insertarScore(String iniciales, int score) {
-        if (iniciales == null) iniciales = "---";
-        iniciales = iniciales.trim().toUpperCase(Locale.ROOT);
-        if (iniciales.length() > 3) iniciales = iniciales.substring(0, 3);
-        while (iniciales.length() < 3) iniciales += "_"; // opcional: rellena
+    public static void insertarTopScore(String s, int score) {
+        if (!entraEnTop10(score)) return;
 
-        // busca posición
-        int pos = MAX_SCORES;
-        for (int i = 0; i < MAX_SCORES; i++) {
-            if (score > topScores[i]) { pos = i; break; }
-        }
-        if (pos >= MAX_SCORES) return;
+        String cleaned = limpiarSiglas(s);
 
-        // desplaza hacia abajo
-        for (int i = MAX_SCORES - 1; i > pos; i--) {
-            topScores[i] = topScores[i - 1];
-            topNames[i] = topNames[i - 1];
+        int pos = MAX_RECORDS - 1;
+        while (pos > 0 && score > scores[pos - 1]) pos--;
+
+        for (int i = MAX_RECORDS - 1; i > pos; i--) {
+            scores[i] = scores[i - 1];
+            siglas[i] = siglas[i - 1];
         }
 
-        topScores[pos] = score;
-        topNames[pos] = iniciales;
+        scores[pos] = score;
+        siglas[pos] = cleaned;
 
         guardarScores();
     }
 
-    /** Convenience: récord (mejor score). */
-    public static int getRecord() {
-        return topScores[0];
+    private static String limpiarSiglas(String s) {
+        if (s == null) s = "";
+        StringBuilder out = new StringBuilder(3);
+        for (int i = 0; i < s.length() && out.length() < 3; i++) {
+            char c = s.charAt(i);
+            if (Character.isLetterOrDigit(c)) out.append(Character.toUpperCase(c));
+        }
+        while (out.length() < 3) out.append('-');
+        return out.toString();
     }
+
+    // ===== Reset =====
+    public static void resetTop() {
+        for (int i = 0; i < MAX_RECORDS; i++) {
+            scores[i] = 0;
+            siglas[i] = "---";
+        }
+        guardarScores();
+    }
+
+    // Alias para no romper escenas viejas
+    public static void resetTopScores() { resetTop(); }
+
+    // ===== Getters =====
+    public static int getScore(int i) { return scores[i]; }
+    public static String getSiglas(int i) { return siglas[i]; }
+
+    public static int getRecord() { return scores[0]; }
 }

@@ -41,23 +41,28 @@ public class EscenaGameOver implements Escena {
 
     @Override
     public void alMostrar() {
-        // Si el score entra en top10 y aún no se ha registrado, pedimos siglas UNA vez
-        if (EstadoJuego.entraEnTop10(puntuacionFinal) && !EstadoJuego.scoreYaRegistrado(puntuacionFinal)) {
+        // Si ya lo pedimos para ESTE score, no lo vuelvas a pedir
+        if (EstadoJuego.yaSePidieronSiglasPara(puntuacionFinal)) return;
+
+        if (EstadoJuego.entraEnTop10(puntuacionFinal)) {
+            // marcamos ANTES de cambiar de escena (clave)
+            EstadoJuego.marcarSiglasPedidasPara(puntuacionFinal);
 
             gestorEscenas.cambiarA(new EscenaNuevoRecord(
                 recursos, viewport, gestorEscenas, puntuacionFinal,
                 new Runnable() {
                     @Override public void run() {
-                        // marcar como ya guardado para que no lo pida otra vez
-                        EstadoJuego.marcarScoreRegistrado(puntuacionFinal);
-
-                        // volver al GameOver normal (con botones)
-                        gestorEscenas.cambiarA(new EscenaGameOver(recursos, viewport, gestorEscenas, puntuacionFinal));
+                        // volvemos a GameOver normal
+                        gestorEscenas.cambiarA(new EscenaGameOver(
+                            recursos, viewport, gestorEscenas, puntuacionFinal
+                        ));
                     }
                 }
             ));
         }
     }
+
+
 
 
 
@@ -74,24 +79,20 @@ public class EscenaGameOver implements Escena {
         viewport.unproject(v);
 
         if (btnReintentar.contains(v.x, v.y)) {
-            final int score = puntuacionFinal;
-
-            if (EstadoJuego.entraEnTop10(score)) {
-                gestorEscenas.cambiarA(new EscenaNuevoRecord(recursos, viewport, gestorEscenas, score, new Runnable() {
-                    @Override public void run() {
-                        EstadoJuego.nivelActual = 1;
-                        gestorEscenas.cambiarA(new EscenaJuego(recursos, viewport, gestorEscenas));
-                    }
-                }));
-            } else {
-                EstadoJuego.nivelActual = 1;
-                gestorEscenas.cambiarA(new EscenaJuego(recursos, viewport, gestorEscenas));
-            }
+            EstadoJuego.resetFlagsGameOver();
+            EstadoJuego.nivelActual = 1;
+            gestorEscenas.cambiarA(new EscenaJuego(recursos, viewport, gestorEscenas));
             return;
         }
 
 
+
+        if (btnSalir.contains(v.x, v.y)) {
+            Gdx.app.exit();
+            return;
+        }
     }
+
 
 
 

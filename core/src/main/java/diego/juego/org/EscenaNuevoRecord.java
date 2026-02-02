@@ -1,10 +1,16 @@
 package diego.juego.org;
 
+import com.badlogic.gdx.Application;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
+import com.badlogic.gdx.InputAdapter;
+import com.badlogic.gdx.InputMultiplexer;
+import com.badlogic.gdx.Input.TextInputListener;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.math.Rectangle;
+import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.viewport.Viewport;
 
 public class EscenaNuevoRecord implements Escena {
@@ -12,67 +18,153 @@ public class EscenaNuevoRecord implements Escena {
     private final Recursos recursos;
     private final Viewport viewport;
     private final GestorEscenas gestor;
-
     private final int score;
-    private final Runnable onFinish;
+    private final Runnable onDone;
 
     private final BitmapFont fuente = new BitmapFont();
     private final GlyphLayout layout = new GlyphLayout();
 
-    private final char[] letras = new char[]{'A','A','A'};
-    private int idx = 0;
+    private final Rectangle btnContinuar;
 
-    public EscenaNuevoRecord(Recursos recursos, Viewport viewport, GestorEscenas gestor, int score, Runnable onFinish) {
+    private final StringBuilder iniciales = new StringBuilder(3);
+
+    private boolean activo = false;
+
+    // ANDROID CONTROL
+    private boolean esAndroid = false;
+    private boolean esperandoDialogo = false;  // mientras el popup está abierto
+    private boolean dialogoMostrado = false;   // para que solo se abra 1 vez
+
+    private final InputAdapter input = new InputAdapter() {
+        @Override
+        public boolean keyDown(int keycode) {
+            if (!activo) return false;
+
+            if (keycode == Input.Keys.BACKSPACE) {
+                borrarLetra();
+                return true;
+            }
+            if (keycode == Input.Keys.ENTER || keycode == Input.Keys.NUMPAD_ENTER) {
+                confirmar();
+                return true;
+            }
+            if (keycode == Input.Keys.BACK || keycode == Input.Keys.ESCAPE) {
+                return true;
+            }
+            return false;
+        }
+
+        @Override
+        public boolean keyTyped(char character) {
+            if (!activo) return false;
+
+            if (Character.isLetterOrDigit(character)) {
+                if (iniciales.length() < 3) {
+                    iniciales.append(Character.toUpperCase(character));
+                }
+                return true;
+            }
+            return false;
+        }
+    };
+
+    public EscenaNuevoRecord(Recursos recursos, Viewport viewport, GestorEscenas gestor, int score, Runnable onDone) {
         this.recursos = recursos;
         this.viewport = viewport;
         this.gestor = gestor;
         this.score = score;
-        this.onFinish = onFinish;
+        this.onDone = onDone;
+
+        float bw = 560f, bh = 120f;
+        btnContinuar = new Rectangle((Main.ANCHO_MUNDO - bw) / 2f, 450f, bw, bh);
     }
 
-    @Override public void alMostrar() {}
+    @Override
+    public void alMostrar() {
+        activo = true;
+
+        esAndroid = (Gdx.app.getType() == Application.ApplicationType.Android);
+
+        // Desktop: capturar teclado
+        InputMultiplexer mux = new InputMultiplexer();
+        mux.addProcessor(input);
+        Gdx.input.setInputProcessor(mux);
+
+        if (esAndroid) {
+            if (!dialogoMostrado) {
+                dialogoMostrado = true;
+                esperandoDialogo = true;
+                pedirSiglasAndroid();
+            }
+        } else {
+            Gdx.input.setOnscreenKeyboardVisible(true);
+        }
+    }
+
+    private void pedirSiglasAndroid() {
+        Gdx.input.getTextInput(new TextInputListener() {
+            @Override
+            public void input(String text) {
+                iniciales.setLength(0);
+
+                for (int i = 0; i < text.length() && iniciales.length() < 3; i++) {
+                    char c = text.charAt(i);
+                    if (Character.isLetterOrDigit(c)) {
+                        iniciales.append(Character.toUpperCase(c));
+                    }
+                }
+
+                while (iniciales.length() < 3) iniciales.append('-');
+
+                esperandoDialogo = false; // ya puede tocar CONTINUAR
+            }
+
+            @Override
+            public void canceled() {
+                iniciales.setLength(0);
+                iniciales.append("---");
+                esperandoDialogo = false; // ya puede tocar CONTINUAR
+            }
+        }, "Introduce tus 3 siglas", "", "Ej: AAA");
+    }
+
+    private void borrarLetra() {
+        int n = iniciales.length();
+        if (n > 0) iniciales.deleteCharAt(n - 1);
+    }
+
+    private boolean confirmado = false;
+
+    private void confirmar() {
+        if (!activo || confirmado) return;
+        confirmado = true;
+
+        while (iniciales.length() < 3) iniciales.append('-');
+        EstadoJuego.insertarTopScore(iniciales.toString(), score);
+
+        activo = false;
+        Gdx.input.setOnscreenKeyboardVisible(false);
+        Gdx.input.setInputProcessor(null);
+
+        if (onDone != null) onDone.run();
+    }
+
 
     @Override
     public void actualizar(float delta) {
-        // Navegación “arcade” con teclas:
-        // Letras A-Z: escribe
-        // Backspace: borra
-        // Enter: confirmar
-        // Flechas: mover cursor (opcional)
-        if (Gdx.input.isKeyJustPressed(Input.Keys.LEFT))  idx = Math.max(0, idx - 1);
-        if (Gdx.input.isKeyJustPressed(Input.Keys.RIGHT)) idx = Math.min(2, idx + 1);
+        if (!activo) return;
 
-        if (Gdx.input.isKeyJustPressed(Input.Keys.BACKSPACE)) {
-            letras[idx] = 'A';
-            idx = Math.max(0, idx - 1);
-        }
+        // Mientras Android tiene el popup abierto, NO aceptes taps
+        if (esAndroid && esperandoDialogo) return;
 
-        if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER) || Gdx.input.isKeyJustPressed(Input.Keys.NUMPAD_ENTER)) {
-            confirmar();
-            return;
-        }
+        if (!Gdx.input.justTouched()) return;
 
-        // Captura de letras (A-Z)
-        for (int key = Input.Keys.A; key <= Input.Keys.Z; key++) {
-            if (Gdx.input.isKeyJustPressed(key)) {
-                char c = (char) ('A' + (key - Input.Keys.A));
-                letras[idx] = c;
-                if (idx < 2) idx++;
-                break;
-            }
-        }
+        Vector3 v = new Vector3(Gdx.input.getX(), Gdx.input.getY(), 0);
+        viewport.unproject(v);
 
-        // En móvil es más cómodo permitir "TOCA para confirmar" cuando ya hay 3 letras
-        if (Gdx.input.justTouched()) {
-            // si quieres que toque confirme siempre:
+        if (btnContinuar.contains(v.x, v.y)) {
             confirmar();
         }
-    }
-
-    private void confirmar() {
-        String iniciales = "" + letras[0] + letras[1] + letras[2];
-        EstadoJuego.insertarScore(iniciales, score);
-        if (onFinish != null) onFinish.run();
     }
 
     @Override
@@ -82,23 +174,39 @@ public class EscenaNuevoRecord implements Escena {
         batch.setColor(1f, 1f, 1f, 1f);
 
         fuente.getData().setScale(5.5f);
-        dibujarCentrado(batch, "¡NUEVO RÉCORD!", 1500f);
+        dibujarCentrado(batch, "NUEVO RÉCORD", 1500f);
 
         fuente.getData().setScale(3.0f);
-        dibujarCentrado(batch, "PUNTUACIÓN: " + score, 1340f);
+        dibujarCentrado(batch, "PUNTOS: " + score, 1320f);
 
-        fuente.getData().setScale(6.0f);
-        String texto = letras[0] + "  " + letras[1] + "  " + letras[2];
-        dibujarCentrado(batch, texto, 1100f);
-
-        // indicador del cursor
-        fuente.getData().setScale(3.0f);
-        String cursor = (idx == 0 ? "^" : " ") + "   " + (idx == 1 ? "^" : " ") + "   " + (idx == 2 ? "^" : " ");
-        dibujarCentrado(batch, cursor, 1030f);
+        fuente.getData().setScale(3.4f);
+        dibujarCentrado(batch, "SIGLAS: " + iniciales.toString(), 1100f);
 
         fuente.getData().setScale(2.0f);
-        dibujarCentrado(batch, "ESCRIBE 3 LETRAS (A-Z)", 860f);
-        dibujarCentrado(batch, "ENTER o TOCA PARA CONFIRMAR", 780f);
+        dibujarCentrado(batch, "Escribe 3 letras y pulsa CONTINUAR", 920f);
+
+        dibujarBoton(batch, btnContinuar, "CONTINUAR", true);
+
+        fuente.getData().setScale(1.0f);
+    }
+
+    private void dibujarBoton(SpriteBatch batch, Rectangle r, String texto, boolean primario) {
+        if (primario) batch.setColor(0.15f, 0.65f, 1f, 0.85f);
+        else batch.setColor(0.85f, 0.25f, 0.25f, 0.85f);
+
+        batch.draw(recursos.pixelBlanco, r.x, r.y, r.width, r.height);
+
+        batch.setColor(0f, 0f, 0f, 0.25f);
+        batch.draw(recursos.pixelBlanco, r.x, r.y, r.width, 6f);
+        batch.draw(recursos.pixelBlanco, r.x, r.y + r.height - 6f, r.width, 6f);
+
+        batch.setColor(1f, 1f, 1f, 1f);
+        fuente.getData().setScale(2.4f);
+
+        layout.setText(fuente, texto);
+        float x = r.x + (r.width - layout.width) / 2f;
+        float y = r.y + (r.height / 2f) + (layout.height / 2f);
+        fuente.draw(batch, layout, x, y);
 
         fuente.getData().setScale(1.0f);
     }
@@ -109,6 +217,16 @@ public class EscenaNuevoRecord implements Escena {
     }
 
     @Override public void alRedimensionar(int a, int b) {}
-    @Override public void alOcultar() {}
-    @Override public void liberar() { fuente.dispose(); }
+
+    @Override
+    public void alOcultar() {
+        activo = false;
+        Gdx.input.setOnscreenKeyboardVisible(false);
+        Gdx.input.setInputProcessor(null);
+    }
+
+    @Override
+    public void liberar() {
+        fuente.dispose();
+    }
 }

@@ -51,7 +51,7 @@ public class EscenaRecords implements Escena {
         }
 
         if (btnReset.contains(v.x, v.y)) {
-            EstadoJuego.resetTopScores(); // <-- OJO: usa el nombre real del método
+            EstadoJuego.resetTop(); // <-- OJO: usa el nombre real del método
             return;
         }
     }
@@ -71,17 +71,12 @@ public class EscenaRecords implements Escena {
         fuente.getData().setScale(3.0f);
         float y = 1300f;
         float step = 92f;
-
-        for (int i = 0; i < EstadoJuego.MAX_SCORES; i++) {
-            String name = EstadoJuego.topNames[i];
-            int score = EstadoJuego.topScores[i];
-
-            if (name == null) name = "---";
-
-            String linea = (i + 1) + ".  " + name + "   " + score;
+        for (int i = 0; i < 10; i++) {
+            String linea = (i + 1) + ".  " + EstadoJuego.getSiglas(i) + "   " + EstadoJuego.getScore(i);
             dibujarCentrado(batch, linea, y);
             y -= step;
         }
+
 
         // botones
         dibujarBoton(batch, btnReset, "RESETEAR", false);
