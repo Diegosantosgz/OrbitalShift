@@ -19,6 +19,9 @@ public class Recursos {
     // Sprites
     public Texture naveJugador;
     public Texture enemigoNormal;
+    public Texture enemigoRapido;
+    public Texture enemigoLento;
+
     public Texture laserVerde;
     public Texture laserRojo;
 
@@ -70,6 +73,11 @@ public class Recursos {
         propulsionRoja = new Texture("propulsion_larga.png");
 
         enemigoNormal = new Texture("enemigo_normal.png");
+        enemigoRapido = new Texture("enemigo_rapido.png");
+        enemigoLento  = new Texture("enemigo_lento.png");
+
+
+
         laserVerde = new Texture("laser_verde.png");
         laserRojo  = new Texture("laser_rojo.png");
 
@@ -126,6 +134,12 @@ public class Recursos {
 
         liberarTex(naveJugador);
         liberarTex(enemigoNormal);
+        liberarTex(enemigoRapido);
+        liberarTex(enemigoLento);
+
+
+
+
         liberarTex(laserVerde);
         liberarTex(laserRojo);
 

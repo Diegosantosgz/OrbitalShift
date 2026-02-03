@@ -549,20 +549,27 @@ public class EscenaJuego implements Escena {
 
             for (Iterator<Enemigo> itE = enemigos.iterator(); itE.hasNext(); ) {
                 Enemigo e = itE.next();
+
                 if (b.limites.overlaps(e.limites)) {
-                    agregarExplosionCentrada(e.x + e.w / 2f, e.y + e.h / 2f, e.w * 1.25f);
-                    reproducirExplosionAleatoria();
-
-                    puntuacion += 100;
-                    activarScorePop();
-
-                    itE.remove();
                     impacto = true;
-                    break;
+
+                    e.recibirImpacto(); // cada bala quita 1 vida
+
+                    if (e.estaMuerto()) {
+                        agregarExplosionCentrada(e.x + e.w / 2f, e.y + e.h / 2f, e.w * 1.25f);
+                        reproducirExplosionAleatoria();
+
+                        puntuacion += 100;
+                        activarScorePop();
+
+                        itE.remove(); // solo si está muerto
+                    }
+
+                    break; // esta bala solo puede afectar a un enemigo
                 }
             }
 
-            if (impacto) itBJ.remove();
+            if (impacto) itBJ.remove(); // la bala desaparece siempre que impacta
         }
 
         // ===== colisión bala enemigo -> jugador =====
@@ -651,7 +658,7 @@ public class EscenaJuego implements Escena {
         }
 
         // enemigos + balas
-        for (Enemigo e : enemigos) batch.draw(recursos.enemigoNormal, e.x, e.y, e.w, e.h);
+        for (Enemigo e : enemigos) batch.draw(e.getTextura(recursos), e.x, e.y, e.w, e.h);
         for (BalaEnemigo b : balasEnemigas) batch.draw(recursos.laserRojo, b.x, b.y, b.w, b.h);
         for (BalaJugador b : balasJugador) batch.draw(recursos.laserVerde, b.x, b.y, b.w, b.h);
 
@@ -865,14 +872,26 @@ public class EscenaJuego implements Escena {
 
     private void spawnEnemigo() {
         if (EstadoJuego.nivelActual == 1) {
+            // Nivel 1: SOLO enemigo normal
             spawnEnemigoBasico();
-        } else if (EstadoJuego.nivelActual == 2) {
-            // Ejemplo: 70% básico + 30% nuevo
-            if (MathUtils.random() < 0.7f) spawnEnemigoBasico();
-            else spawnEnemigoNuevo1();
-        } else {
-            spawnEnemigoBasico();
+            return;
         }
+
+        if (EstadoJuego.nivelActual == 2) {
+            // Nivel 2: mezcla (ajusta porcentajes a tu gusto)
+            float r = MathUtils.random();
+            if (r < 0.60f) {
+                spawnEnemigoBasico();   // 60% normal
+            } else if (r < 0.85f) {
+                spawnEnemigoRapido();   // 25% rápido
+            } else {
+                spawnEnemigoLento();    // 15% lento
+            }
+            return;
+        }
+
+        // Si en el futuro hay más niveles
+        spawnEnemigoBasico();
     }
 
     private void spawnEnemigoBasico() {
@@ -885,6 +904,33 @@ public class EscenaJuego implements Escena {
         float delayDisparo = MathUtils.random(0.9f, 1.7f);
         enemigos.add(new Enemigo(spawnX, spawnY, eW, eH, delayDisparo));
     }
+    private void spawnEnemigoRapido() {
+        float eW = recursos.enemigoRapido.getWidth() * escala;
+        float eH = recursos.enemigoRapido.getHeight() * escala;
+
+        float spawnX = MathUtils.random(0f, Main.ANCHO_MUNDO - eW);
+        float spawnY = Main.ALTO_MUNDO + eH;
+
+        float delayDisparo = MathUtils.random(1.2f, 2.0f);
+        enemigos.add(new EnemigoRapido(spawnX, spawnY, eW, eH, delayDisparo));
+    }
+    private void spawnEnemigoLento() {
+        float eW = recursos.enemigoLento.getWidth() * escala;
+        float eH = recursos.enemigoLento.getHeight() * escala;
+
+        float spawnX = MathUtils.random(0f, Main.ANCHO_MUNDO - eW);
+        float spawnY = Main.ALTO_MUNDO + eH;
+
+        float delayDisparo = MathUtils.random(0.7f, 1.3f);
+
+        Enemigo e = new EnemigoLento(spawnX, spawnY, eW, eH, delayDisparo);
+        enemigos.add(e);
+
+        Gdx.app.log("SPAWN", e.getClass().getName() + " vida=" + e.getVida());
+    }
+
+
+
 
     private void spawnEnemigoNuevo1() {
         // Por ahora, para que compile: spawnea un básico (luego lo cambias por el nuevo enemigo real)
