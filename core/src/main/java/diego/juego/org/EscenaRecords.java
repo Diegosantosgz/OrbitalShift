@@ -51,7 +51,7 @@ public class EscenaRecords implements Escena {
         }
 
         if (btnReset.contains(v.x, v.y)) {
-            EstadoJuego.resetTop(); // <-- OJO: usa el nombre real del método
+            EstadoJuego.resetTop();
             return;
         }
     }
@@ -65,9 +65,9 @@ public class EscenaRecords implements Escena {
 
         // título
         fuente.getData().setScale(6.0f);
-        dibujarCentrado(batch, "RECORDS", 1500f);
+        dibujarCentrado(batch, recursos.textos.t("records_title"), 1500f);
 
-        // lista top 10 (INICIALES + SCORE)
+        // lista top 10 (INICIALES + SCORE) -> esto no necesita traducción
         fuente.getData().setScale(3.0f);
         float y = 1300f;
         float step = 92f;
@@ -77,10 +77,9 @@ public class EscenaRecords implements Escena {
             y -= step;
         }
 
-
         // botones
-        dibujarBoton(batch, btnReset, "RESETEAR", false);
-        dibujarBoton(batch, btnVolver, "VOLVER", true);
+        dibujarBoton(batch, btnReset,  recursos.textos.t("records_reset"), false);
+        dibujarBoton(batch, btnVolver, recursos.textos.t("records_back"), true);
 
         fuente.getData().setScale(1.0f);
     }

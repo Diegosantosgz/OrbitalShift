@@ -36,11 +36,11 @@ public class EscenaNivel2Intro implements Escena {
         batch.setColor(1f, 1f, 1f, 1f);
 
         fuente.getData().setScale(7f);
-        dibujarCentrado(batch, "NIVEL 2", 1450f);
+        dibujarCentrado(batch, recursos.textos.t("level2_title"), 1450f);
 
         fuente.getData().setScale(2.5f);
-        dibujarCentrado(batch, "Prepárate...", 1200f);
-        dibujarCentrado(batch, "Toca para continuar", 950f);
+        dibujarCentrado(batch, recursos.textos.t("level2_ready"), 1200f);
+        dibujarCentrado(batch, recursos.textos.t("level2_tap"), 950f);
 
         fuente.getData().setScale(1.0f);
     }

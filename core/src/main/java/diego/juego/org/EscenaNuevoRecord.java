@@ -32,8 +32,8 @@ public class EscenaNuevoRecord implements Escena {
 
     // ANDROID CONTROL
     private boolean esAndroid = false;
-    private boolean esperandoDialogo = false;  // mientras el popup está abierto
-    private boolean dialogoMostrado = false;   // para que solo se abra 1 vez
+    private boolean esperandoDialogo = false;
+    private boolean dialogoMostrado = false;
 
     private final InputAdapter input = new InputAdapter() {
         @Override
@@ -85,7 +85,6 @@ public class EscenaNuevoRecord implements Escena {
 
         esAndroid = (Gdx.app.getType() == Application.ApplicationType.Android);
 
-        // Desktop: capturar teclado
         InputMultiplexer mux = new InputMultiplexer();
         mux.addProcessor(input);
         Gdx.input.setInputProcessor(mux);
@@ -103,29 +102,33 @@ public class EscenaNuevoRecord implements Escena {
 
     private void pedirSiglasAndroid() {
         Gdx.input.getTextInput(new TextInputListener() {
-            @Override
-            public void input(String text) {
-                iniciales.setLength(0);
+                                   @Override
+                                   public void input(String text) {
+                                       iniciales.setLength(0);
 
-                for (int i = 0; i < text.length() && iniciales.length() < 3; i++) {
-                    char c = text.charAt(i);
-                    if (Character.isLetterOrDigit(c)) {
-                        iniciales.append(Character.toUpperCase(c));
-                    }
-                }
+                                       for (int i = 0; i < text.length() && iniciales.length() < 3; i++) {
+                                           char c = text.charAt(i);
+                                           if (Character.isLetterOrDigit(c)) {
+                                               iniciales.append(Character.toUpperCase(c));
+                                           }
+                                       }
 
-                while (iniciales.length() < 3) iniciales.append('-');
+                                       while (iniciales.length() < 3) iniciales.append('-');
 
-                esperandoDialogo = false; // ya puede tocar CONTINUAR
-            }
+                                       esperandoDialogo = false;
+                                   }
 
-            @Override
-            public void canceled() {
-                iniciales.setLength(0);
-                iniciales.append("---");
-                esperandoDialogo = false; // ya puede tocar CONTINUAR
-            }
-        }, "Introduce tus 3 siglas", "", "Ej: AAA");
+                                   @Override
+                                   public void canceled() {
+                                       iniciales.setLength(0);
+                                       iniciales.append("---");
+                                       esperandoDialogo = false;
+                                   }
+                               },
+            recursos.textos.t("newrecord_dialog_title"),
+            recursos.textos.t("newrecord_dialog_hint"),
+            recursos.textos.t("newrecord_dialog_example")
+        );
     }
 
     private void borrarLetra() {
@@ -149,12 +152,9 @@ public class EscenaNuevoRecord implements Escena {
         if (onDone != null) onDone.run();
     }
 
-
     @Override
     public void actualizar(float delta) {
         if (!activo) return;
-
-        // Mientras Android tiene el popup abierto, NO aceptes taps
         if (esAndroid && esperandoDialogo) return;
 
         if (!Gdx.input.justTouched()) return;
@@ -174,18 +174,18 @@ public class EscenaNuevoRecord implements Escena {
         batch.setColor(1f, 1f, 1f, 1f);
 
         fuente.getData().setScale(5.5f);
-        dibujarCentrado(batch, "NUEVO RÉCORD", 1500f);
+        dibujarCentrado(batch, recursos.textos.t("newrecord_title"), 1500f);
 
         fuente.getData().setScale(3.0f);
-        dibujarCentrado(batch, "PUNTOS: " + score, 1320f);
+        dibujarCentrado(batch, recursos.textos.t("newrecord_points", score), 1320f);
 
         fuente.getData().setScale(3.4f);
-        dibujarCentrado(batch, "SIGLAS: " + iniciales.toString(), 1100f);
+        dibujarCentrado(batch, recursos.textos.t("newrecord_initials", iniciales.toString()), 1100f);
 
         fuente.getData().setScale(2.0f);
-        dibujarCentrado(batch, "Escribe 3 letras y pulsa CONTINUAR", 920f);
+        dibujarCentrado(batch, recursos.textos.t("newrecord_hint"), 920f);
 
-        dibujarBoton(batch, btnContinuar, "CONTINUAR", true);
+        dibujarBoton(batch, btnContinuar, recursos.textos.t("newrecord_continue"), true);
 
         fuente.getData().setScale(1.0f);
     }

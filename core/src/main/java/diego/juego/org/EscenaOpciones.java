@@ -9,8 +9,6 @@ import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.viewport.Viewport;
 
-
-
 public class EscenaOpciones implements Escena {
 
     private final Recursos recursos;
@@ -21,20 +19,13 @@ public class EscenaOpciones implements Escena {
     private final GlyphLayout layout;
 
     private final Rectangle btnToggleMultitouch;
-
     private final Rectangle btnToggleVibracion;
-
     private final Rectangle btnToggleMusica;
-
     private final Rectangle btnToggleSfx;
 
     // Idiomas
     private final Rectangle btnIdiomaES;
     private final Rectangle btnIdiomaEN;
-
-
-
-
 
     public EscenaOpciones(Recursos recursos, Viewport viewport, GestorEscenas gestorEscenas) {
         this.recursos = recursos;
@@ -44,53 +35,23 @@ public class EscenaOpciones implements Escena {
         this.fuente = new BitmapFont();
         this.layout = new GlyphLayout();
 
-        // Botón multitouch
-        this.btnToggleMultitouch = new Rectangle(
-            (Main.ANCHO_MUNDO - 720f) / 2f,
-            900f,
-            720f,
-            120f
-        );
+        btnToggleMultitouch = new Rectangle((Main.ANCHO_MUNDO - 720f) / 2f, 900f, 720f, 120f);
+        btnToggleVibracion  = new Rectangle((Main.ANCHO_MUNDO - 720f) / 2f, 720f, 720f, 120f);
+        btnToggleMusica     = new Rectangle((Main.ANCHO_MUNDO - 720f) / 2f, 540f, 720f, 120f);
+        btnToggleSfx        = new Rectangle((Main.ANCHO_MUNDO - 720f) / 2f, 360f, 720f, 120f);
 
-        // Botón vibración
-        this.btnToggleVibracion = new Rectangle(
-            (Main.ANCHO_MUNDO - 720f) / 2f,
-            720f,   // debajo del multitouch
-            720f,
-            120f
-        );
-        // Botón música
-        this.btnToggleMusica = new Rectangle(
-            (Main.ANCHO_MUNDO - 720f) / 2f,
-            540f,   // debajo de vibración (ajusta si quieres)
-            720f,
-            120f
-        );
-        // boton efectos de sonido
-        this.btnToggleSfx = new Rectangle(
-            (Main.ANCHO_MUNDO - 720f) / 2f,
-            360f,   // debajo de música (ajusta si quieres)
-            720f,
-            120f
-        );
-
-        // ===== Botones idioma (debajo de SFX, uno al lado de otro) =====
+        // Botones idioma (debajo de SFX, uno al lado de otro)
         float totalW = 720f;
         float gap = 30f;
         float eachW = (totalW - gap) / 2f;
         float x0 = (Main.ANCHO_MUNDO - totalW) / 2f;
-        float yIdiomas = 180f; // debajo de SFX (SFX está en y=360)
+        float yIdiomas = 180f;
 
         btnIdiomaES = new Rectangle(x0, yIdiomas, eachW, 120f);
         btnIdiomaEN = new Rectangle(x0 + eachW + gap, yIdiomas, eachW, 120f);
-
     }
 
-
-    @Override
-    public void alMostrar() {
-        // Nada especial
-    }
+    @Override public void alMostrar() { }
 
     @Override
     public void actualizar(float delta) {
@@ -107,6 +68,7 @@ public class EscenaOpciones implements Escena {
 
         Vector3 v = new Vector3(Gdx.input.getX(), Gdx.input.getY(), 0);
         viewport.unproject(v);
+
         float x = v.x;
         float y = v.y;
 
@@ -132,7 +94,7 @@ public class EscenaOpciones implements Escena {
             return;
         }
 
-        // ===== Idioma =====
+        // Idioma
         if (btnIdiomaES.contains(x, y)) {
             EstadoJuego.idiomaActual = EstadoJuego.Idioma.ES;
             recursos.textos.recargar();
@@ -148,86 +110,71 @@ public class EscenaOpciones implements Escena {
         gestorEscenas.cambiarA(new EscenaMenu(recursos, viewport, gestorEscenas));
     }
 
-
     @Override
     public void dibujar(SpriteBatch batch) {
-        // Fondo oscurecido
         batch.setColor(0f, 0f, 0f, 0.65f);
         batch.draw(recursos.pixelBlanco, 0, 0, Main.ANCHO_MUNDO, Main.ALTO_MUNDO);
         batch.setColor(1f, 1f, 1f, 1f);
 
+        String on  = recursos.textos.t("common_on");
+        String off = recursos.textos.t("common_off");
+
         // Título
         fuente.getData().setScale(6.0f);
-        dibujarTextoCentrado(batch, "OPCIONES", Main.ANCHO_MUNDO / 2f, 1450f);
+        dibujarTextoCentrado(batch, recursos.textos.t("opt_title"), Main.ANCHO_MUNDO / 2f, 1450f);
 
         // Subtítulo
         fuente.getData().setScale(2.4f);
-        dibujarTextoCentrado(batch, "Multitouch (mover + disparar)", Main.ANCHO_MUNDO / 2f, 1200f);
+        dibujarTextoCentrado(batch, recursos.textos.t("opt_multitouch_desc"), Main.ANCHO_MUNDO / 2f, 1200f);
 
-        // Botón toggle
-        dibujarBotonToggle(batch,
-            btnToggleMultitouch,
-            "MULTITOUCH: " + (EstadoJuego.multitouchActivado ? "ON" : "OFF"),
+        // Toggles
+        fuente.getData().setScale(2.6f);
+        dibujarBotonToggle(batch, btnToggleMultitouch,
+            recursos.textos.t("opt_multitouch") + ": " + (EstadoJuego.multitouchActivado ? on : off),
             EstadoJuego.multitouchActivado
         );
 
-
-// Botón música
-        dibujarBotonToggle(batch,
-            btnToggleMusica,
-            "MÚSICA: " + (EstadoJuego.musicaActivada ? "ON" : "OFF"),
-            EstadoJuego.musicaActivada
-        );
-
-// Botón vibración
-        dibujarBotonToggle(batch,
-            btnToggleVibracion,
-            "VIBRACIÓN: " + (EstadoJuego.vibracionActivada ? "ON" : "OFF"),
+        dibujarBotonToggle(batch, btnToggleVibracion,
+            recursos.textos.t("opt_vibration") + ": " + (EstadoJuego.vibracionActivada ? on : off),
             EstadoJuego.vibracionActivada
         );
 
-        dibujarBotonToggle(batch,
-            btnToggleSfx,
-            "SFX: " + (EstadoJuego.sfxActivados ? "ON" : "OFF"),
+        dibujarBotonToggle(batch, btnToggleMusica,
+            recursos.textos.t("opt_music") + ": " + (EstadoJuego.musicaActivada ? on : off),
+            EstadoJuego.musicaActivada
+        );
+
+        dibujarBotonToggle(batch, btnToggleSfx,
+            recursos.textos.t("opt_sfx") + ": " + (EstadoJuego.sfxActivados ? on : off),
             EstadoJuego.sfxActivados
         );
-        // ===== Idioma (2 botones) =====
+
+        // Idioma
         fuente.getData().setScale(2.0f);
-        dibujarTextoCentrado(batch,
-            recursos.textos.t("opt_language"),
-            Main.ANCHO_MUNDO / 2f,
-            330f
-        );
-        fuente.getData().setScale(1.0f);
+        dibujarTextoCentrado(batch, recursos.textos.t("opt_language"), Main.ANCHO_MUNDO / 2f, 330f);
 
         dibujarBotonIdioma(batch, btnIdiomaES, "ES", EstadoJuego.idiomaActual == EstadoJuego.Idioma.ES);
         dibujarBotonIdioma(batch, btnIdiomaEN, "EN", EstadoJuego.idiomaActual == EstadoJuego.Idioma.EN);
 
-
-        // Ayuda
+        // Back
         fuente.getData().setScale(1.8f);
-        dibujarTextoCentrado(batch, "BACK para volver", Main.ANCHO_MUNDO / 2f, 140f);
-        fuente.getData().setScale(1.0f);
+        dibujarTextoCentrado(batch, recursos.textos.t("opt_back"), Main.ANCHO_MUNDO / 2f, 140f);
 
+        fuente.getData().setScale(1.0f);
     }
 
     private void dibujarBotonToggle(SpriteBatch batch, Rectangle r, String texto, boolean activado) {
-        // Color según estado
         if (activado) batch.setColor(0.20f, 0.85f, 0.35f, 0.85f);
         else batch.setColor(0.85f, 0.25f, 0.25f, 0.85f);
 
         batch.draw(recursos.pixelBlanco, r.x, r.y, r.width, r.height);
 
-        // Líneas decorativas
         batch.setColor(0f, 0f, 0f, 0.25f);
         batch.draw(recursos.pixelBlanco, r.x, r.y, r.width, 6f);
         batch.draw(recursos.pixelBlanco, r.x, r.y + r.height - 6f, r.width, 6f);
 
-        // Texto
         batch.setColor(1f, 1f, 1f, 1f);
-        fuente.getData().setScale(2.6f);
         dibujarTextoCentrado(batch, texto, r.x + r.width / 2f, r.y + r.height / 2f + 22f);
-        fuente.getData().setScale(1.0f);
     }
 
     private void dibujarTextoCentrado(SpriteBatch batch, String texto, float centroX, float y) {
@@ -235,9 +182,10 @@ public class EscenaOpciones implements Escena {
         float x = centroX - layout.width / 2f;
         fuente.draw(batch, layout, x, y);
     }
+
     private void dibujarBotonIdioma(SpriteBatch batch, Rectangle r, String texto, boolean seleccionado) {
-        if (seleccionado) batch.setColor(0.15f, 0.65f, 1f, 0.90f);   // azul si seleccionado
-        else             batch.setColor(0.20f, 0.20f, 0.25f, 0.85f); // gris si no
+        if (seleccionado) batch.setColor(0.15f, 0.65f, 1f, 0.90f);
+        else batch.setColor(0.20f, 0.20f, 0.25f, 0.85f);
 
         batch.draw(recursos.pixelBlanco, r.x, r.y, r.width, r.height);
 
@@ -246,24 +194,14 @@ public class EscenaOpciones implements Escena {
         batch.draw(recursos.pixelBlanco, r.x, r.y + r.height - 6f, r.width, 6f);
 
         batch.setColor(1f, 1f, 1f, 1f);
-        fuente.getData().setScale(2.6f);
         dibujarTextoCentrado(batch, texto, r.x + r.width / 2f, r.y + r.height / 2f + 22f);
-        fuente.getData().setScale(1.0f);
     }
 
-
-    @Override
-    public void alRedimensionar(int ancho, int alto) {
-        // El viewport se actualiza en Main
-    }
-
-    @Override
-    public void alOcultar() {
-        // Nada
-    }
+    @Override public void alRedimensionar(int ancho, int alto) { }
+    @Override public void alOcultar() { }
 
     @Override
     public void liberar() {
-    fuente.dispose();
+        fuente.dispose();
     }
 }

@@ -45,14 +45,12 @@ public class EscenaGameOver implements Escena {
         if (EstadoJuego.yaSePidieronSiglasPara(puntuacionFinal)) return;
 
         if (EstadoJuego.entraEnTop10(puntuacionFinal)) {
-            // marcamos ANTES de cambiar de escena (clave)
             EstadoJuego.marcarSiglasPedidasPara(puntuacionFinal);
 
             gestorEscenas.cambiarA(new EscenaNuevoRecord(
                 recursos, viewport, gestorEscenas, puntuacionFinal,
                 new Runnable() {
                     @Override public void run() {
-                        // volvemos a GameOver normal
                         gestorEscenas.cambiarA(new EscenaGameOver(
                             recursos, viewport, gestorEscenas, puntuacionFinal
                         ));
@@ -61,10 +59,6 @@ public class EscenaGameOver implements Escena {
             ));
         }
     }
-
-
-
-
 
     @Override
     public void actualizar(float delta) {
@@ -85,20 +79,13 @@ public class EscenaGameOver implements Escena {
             return;
         }
 
-
-
         if (btnSalir.contains(v.x, v.y)) {
             Gdx.app.exit();
-            return;
         }
     }
 
-
-
-
     @Override
     public void dibujar(SpriteBatch batch) {
-        // oscurecer fondo
         batch.setColor(0f, 0f, 0f, 0.65f);
         batch.draw(recursos.pixelBlanco, 0, 0, Main.ANCHO_MUNDO, Main.ALTO_MUNDO);
         batch.setColor(1f, 1f, 1f, 1f);
@@ -116,25 +103,27 @@ public class EscenaGameOver implements Escena {
 
         batch.setColor(1f, 1f, 1f, 1f);
 
+        // === TEXTOS I18N ===
+        String tTitle  = recursos.textos.t("gameover_title");
+        String tScore  = recursos.textos.t("gameover_score", puntuacionFinal);
+        String tRecord = recursos.textos.t("gameover_record", EstadoJuego.getRecord());
+        String tRetry  = recursos.textos.t("gameover_retry");
+        String tExit   = recursos.textos.t("gameover_exit");
+        String tHint   = recursos.textos.t("gameover_hint");
+
         fuente.getData().setScale(7.0f);
-        dibujarTextoCentrado(batch, "GAME OVER", Main.ANCHO_MUNDO / 2f, panelY + panelH - 140f);
+        dibujarTextoCentrado(batch, tTitle, Main.ANCHO_MUNDO / 2f, panelY + panelH - 140f);
 
         fuente.getData().setScale(3.2f);
-        dibujarTextoCentrado(batch, "Puntuación: " + puntuacionFinal, Main.ANCHO_MUNDO / 2f, panelY + panelH - 250f);
+        dibujarTextoCentrado(batch, tScore,  Main.ANCHO_MUNDO / 2f, panelY + panelH - 250f);
+        dibujarTextoCentrado(batch, tRecord, Main.ANCHO_MUNDO / 2f, panelY + panelH - 320f);
 
-        dibujarTextoCentrado(batch, "RÉCORD: " + EstadoJuego.getRecord(), Main.ANCHO_MUNDO / 2f, panelY + panelH - 320f);
-
-
-
-
-
-
-        dibujarBoton(batch, btnReintentar, "REINTENTAR", true);
-        dibujarBoton(batch, btnSalir, "SALIR", false);
+        dibujarBoton(batch, btnReintentar, tRetry, true);
+        dibujarBoton(batch, btnSalir,      tExit,  false);
 
         fuente.getData().setScale(1.6f);
         batch.setColor(1f, 1f, 1f, 0.75f);
-        dibujarTextoCentrado(batch, "Pulsa un botón o BACK/ESC para salir", Main.ANCHO_MUNDO / 2f, panelY + 90f);
+        dibujarTextoCentrado(batch, tHint, Main.ANCHO_MUNDO / 2f, panelY + 90f);
 
         batch.setColor(1f, 1f, 1f, 1f);
         fuente.getData().setScale(1.0f);
@@ -143,6 +132,7 @@ public class EscenaGameOver implements Escena {
     private void dibujarBoton(SpriteBatch batch, Rectangle r, String texto, boolean primario) {
         if (primario) batch.setColor(0.15f, 0.65f, 1f, 0.85f);
         else batch.setColor(0.85f, 0.25f, 0.25f, 0.85f);
+
         batch.draw(recursos.pixelBlanco, r.x, r.y, r.width, r.height);
 
         batch.setColor(0f, 0f, 0f, 0.25f);

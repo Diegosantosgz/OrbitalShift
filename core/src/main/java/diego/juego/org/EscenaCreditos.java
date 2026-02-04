@@ -26,7 +26,10 @@ public class EscenaCreditos implements Escena {
 
     @Override
     public void actualizar(float delta) {
-        if (Gdx.input.isKeyJustPressed(Input.Keys.BACK) || Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE) || Gdx.input.justTouched()) {
+        if (Gdx.input.isKeyJustPressed(Input.Keys.BACK)
+            || Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)
+            || Gdx.input.justTouched()) {
+
             gestor.cambiarA(new EscenaMenu(recursos, viewport, gestor));
         }
     }
@@ -38,10 +41,11 @@ public class EscenaCreditos implements Escena {
         batch.setColor(1f, 1f, 1f, 1f);
 
         fuente.getData().setScale(5.5f);
-        dibujarCentrado(batch, "CRÉDITOS", Main.ANCHO_MUNDO / 2f, 1450f);
+        dibujarCentrado(batch, recursos.textos.t("credits_title"), Main.ANCHO_MUNDO / 2f, 1450f);
 
         fuente.getData().setScale(2.2f);
-        dibujarCentrado(batch, "Autor: Diego Santos González\nRecursos: (añadir fuentes/licencias)\nToca para volver", Main.ANCHO_MUNDO / 2f, 1100f);
+        dibujarCentrado(batch, recursos.textos.t("credits_body"), Main.ANCHO_MUNDO / 2f, 1100f);
+
         fuente.getData().setScale(1.0f);
     }
 

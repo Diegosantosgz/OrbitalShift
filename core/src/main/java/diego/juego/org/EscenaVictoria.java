@@ -22,9 +22,6 @@ public class EscenaVictoria implements Escena {
         this.viewport = viewport;
         this.gestor = gestor;
         this.puntuacion = puntuacion;
-
-
-
     }
 
     @Override
@@ -44,10 +41,14 @@ public class EscenaVictoria implements Escena {
         batch.setColor(1f, 1f, 1f, 1f);
 
         fuente.getData().setScale(6f);
-        dibujarCentrado(batch, "¡VICTORIA!", 1500f);
+        dibujarCentrado(batch, recursos.textos.t("victory_title"), 1500f);
 
         fuente.getData().setScale(3f);
-        dibujarCentrado(batch, "Puntuación: " + puntuacion, 1300f);
+        dibujarCentrado(
+            batch,
+            recursos.textos.t("victory_score", puntuacion),
+            1300f
+        );
 
         fuente.getData().setScale(1.0f);
     }
