@@ -27,6 +27,10 @@ public final class EstadoJuego {
     // NUEVO: para no pedir siglas 20 veces con el mismo score
     private static int scoreSiglasYaPedidas = -1;
 
+    public enum Idioma { ES, EN }
+    public static Idioma idiomaActual = Idioma.ES;
+
+
     public static boolean yaSePidieronSiglasPara(int score) {
         return scoreSiglasYaPedidas == score;
     }
@@ -121,3 +125,5 @@ public final class EstadoJuego {
 
     public static int getRecord() { return scores[0]; }
 }
+
+

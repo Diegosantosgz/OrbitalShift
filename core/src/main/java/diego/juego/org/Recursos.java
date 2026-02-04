@@ -3,6 +3,7 @@ package diego.juego.org;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.audio.Sound;
+import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
 
@@ -61,6 +62,10 @@ public class Recursos {
     public Sound sfxCuracion;
     public Sound sfxAntiGravedad;
 
+    public Textos textos;
+
+
+
 
     public void cargar() {
         // Texturas
@@ -90,6 +95,10 @@ public class Recursos {
         fuerzaGravitacional = new Texture("fuerza_gravitacional.png");
         itemAntigravitacional = new Texture("esfera_antigravitacional.png");
         naveAntigravitacional = new Texture("nave_antigravitacional.png");
+
+
+        textos = new Textos();
+
 
 
 
@@ -171,6 +180,9 @@ public class Recursos {
         liberarSfx(sfxRomperEscudo);
         liberarSfx(sfxCuracion);
         liberarSfx(sfxAntiGravedad);
+
+        textos = null;
+
 
     }
 

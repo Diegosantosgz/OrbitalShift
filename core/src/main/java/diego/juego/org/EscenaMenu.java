@@ -142,25 +142,25 @@ public class EscenaMenu implements Escena {
 
         // Título
         fuente.getData().setScale(7.0f);
-        dibujarTextoCentrado(batch, "ORBITAL SHIFT", Main.ANCHO_MUNDO / 2f, 1520f);
+        dibujarTextoCentrado(batch, recursos.textos.t("menu_title"), Main.ANCHO_MUNDO / 2f, 1520f);
 
+        // Récord
         fuente.getData().setScale(2.2f);
         dibujarTextoCentrado(batch,
-            "RÉCORD: " + EstadoJuego.getSiglas(0) + " " + EstadoJuego.getScore(0),
+            recursos.textos.t("menu_record", EstadoJuego.getSiglas(0), EstadoJuego.getScore(0)),
             Main.ANCHO_MUNDO / 2f,
             1400f
         );
 
-
-
         // Botones
         fuente.getData().setScale(2.2f);
-        dibujarBoton(batch, btnJugar, "JUGAR");
-        dibujarBoton(batch, btnOpciones, "OPCIONES");
-        dibujarBoton(batch, btnCreditos, "CRÉDITOS");
-        dibujarBoton(batch, btnRecords, "RECORDS");
-        dibujarBoton(batch, btnAyuda, "AYUDA");
-        dibujarBoton(batch, btnSalir, "SALIR");
+        dibujarBoton(batch, btnJugar,    recursos.textos.t("menu_play"));
+        dibujarBoton(batch, btnOpciones, recursos.textos.t("menu_options"));
+        dibujarBoton(batch, btnCreditos, recursos.textos.t("menu_credits"));
+        dibujarBoton(batch, btnRecords,  recursos.textos.t("menu_records"));
+        dibujarBoton(batch, btnAyuda,    recursos.textos.t("menu_help"));
+        dibujarBoton(batch, btnSalir,    recursos.textos.t("menu_exit"));
+
 
         fuente.getData().setScale(1.0f);
     }

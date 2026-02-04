@@ -28,6 +28,11 @@ public class EscenaOpciones implements Escena {
 
     private final Rectangle btnToggleSfx;
 
+    // Idiomas
+    private final Rectangle btnIdiomaES;
+    private final Rectangle btnIdiomaEN;
+
+
 
 
 
@@ -69,6 +74,16 @@ public class EscenaOpciones implements Escena {
             120f
         );
 
+        // ===== Botones idioma (debajo de SFX, uno al lado de otro) =====
+        float totalW = 720f;
+        float gap = 30f;
+        float eachW = (totalW - gap) / 2f;
+        float x0 = (Main.ANCHO_MUNDO - totalW) / 2f;
+        float yIdiomas = 180f; // debajo de SFX (SFX está en y=360)
+
+        btnIdiomaES = new Rectangle(x0, yIdiomas, eachW, 120f);
+        btnIdiomaEN = new Rectangle(x0 + eachW + gap, yIdiomas, eachW, 120f);
+
     }
 
 
@@ -83,7 +98,6 @@ public class EscenaOpciones implements Escena {
     }
 
     private void procesarEntrada() {
-        // BACK / ESC -> volver al menú
         if (Gdx.input.isKeyJustPressed(Input.Keys.BACK) || Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
             gestorEscenas.cambiarA(new EscenaMenu(recursos, viewport, gestorEscenas));
             return;
@@ -96,46 +110,44 @@ public class EscenaOpciones implements Escena {
         float x = v.x;
         float y = v.y;
 
-        // Si toca el botón, alternar multitouch y quedarse en opciones
         if (btnToggleMultitouch.contains(x, y)) {
             EstadoJuego.multitouchActivado = !EstadoJuego.multitouchActivado;
             return;
         }
+
         if (btnToggleVibracion.contains(x, y)) {
             EstadoJuego.vibracionActivada = !EstadoJuego.vibracionActivada;
             return;
         }
+
         if (btnToggleMusica.contains(x, y)) {
             EstadoJuego.musicaActivada = !EstadoJuego.musicaActivada;
-
-            if (EstadoJuego.musicaActivada) {
-                recursos.musicaFondo.play();
-            } else {
-                recursos.musicaFondo.pause();
-            }
+            if (EstadoJuego.musicaActivada) recursos.musicaFondo.play();
+            else recursos.musicaFondo.pause();
             return;
         }
 
         if (btnToggleSfx.contains(x, y)) {
             EstadoJuego.sfxActivados = !EstadoJuego.sfxActivados;
-
-            if (!EstadoJuego.sfxActivados) {
-                if (recursos.sfxDisparo != null) recursos.sfxDisparo.stop();
-                if (recursos.sfxExplosion != null) recursos.sfxExplosion.stop();
-                if (recursos.sfxGravedad != null) recursos.sfxGravedad.stop();
-                if (recursos.sfxEscudo != null) recursos.sfxEscudo.stop();
-                if (recursos.sfxRomperEscudo != null) recursos.sfxRomperEscudo.stop();
-                if (recursos.sfxCuracion != null) recursos.sfxCuracion.stop();
-                if (recursos.sfxAntiGravedad != null) recursos.sfxAntiGravedad.stop();
-            }
             return;
         }
 
+        // ===== Idioma =====
+        if (btnIdiomaES.contains(x, y)) {
+            EstadoJuego.idiomaActual = EstadoJuego.Idioma.ES;
+            recursos.textos.recargar();
+            return;
+        }
 
+        if (btnIdiomaEN.contains(x, y)) {
+            EstadoJuego.idiomaActual = EstadoJuego.Idioma.EN;
+            recursos.textos.recargar();
+            return;
+        }
 
-        // Si toca fuera, volver al menú
         gestorEscenas.cambiarA(new EscenaMenu(recursos, viewport, gestorEscenas));
     }
+
 
     @Override
     public void dibujar(SpriteBatch batch) {
@@ -179,10 +191,21 @@ public class EscenaOpciones implements Escena {
             "SFX: " + (EstadoJuego.sfxActivados ? "ON" : "OFF"),
             EstadoJuego.sfxActivados
         );
+        // ===== Idioma (2 botones) =====
+        fuente.getData().setScale(2.0f);
+        dibujarTextoCentrado(batch,
+            recursos.textos.t("opt_language"),
+            Main.ANCHO_MUNDO / 2f,
+            330f
+        );
+        fuente.getData().setScale(1.0f);
+
+        dibujarBotonIdioma(batch, btnIdiomaES, "ES", EstadoJuego.idiomaActual == EstadoJuego.Idioma.ES);
+        dibujarBotonIdioma(batch, btnIdiomaEN, "EN", EstadoJuego.idiomaActual == EstadoJuego.Idioma.EN);
+
 
         // Ayuda
         fuente.getData().setScale(1.8f);
-        dibujarTextoCentrado(batch, "Toca el botón para cambiar", Main.ANCHO_MUNDO / 2f, 250f);
         dibujarTextoCentrado(batch, "BACK para volver", Main.ANCHO_MUNDO / 2f, 140f);
         fuente.getData().setScale(1.0f);
 
@@ -212,6 +235,22 @@ public class EscenaOpciones implements Escena {
         float x = centroX - layout.width / 2f;
         fuente.draw(batch, layout, x, y);
     }
+    private void dibujarBotonIdioma(SpriteBatch batch, Rectangle r, String texto, boolean seleccionado) {
+        if (seleccionado) batch.setColor(0.15f, 0.65f, 1f, 0.90f);   // azul si seleccionado
+        else             batch.setColor(0.20f, 0.20f, 0.25f, 0.85f); // gris si no
+
+        batch.draw(recursos.pixelBlanco, r.x, r.y, r.width, r.height);
+
+        batch.setColor(0f, 0f, 0f, 0.25f);
+        batch.draw(recursos.pixelBlanco, r.x, r.y, r.width, 6f);
+        batch.draw(recursos.pixelBlanco, r.x, r.y + r.height - 6f, r.width, 6f);
+
+        batch.setColor(1f, 1f, 1f, 1f);
+        fuente.getData().setScale(2.6f);
+        dibujarTextoCentrado(batch, texto, r.x + r.width / 2f, r.y + r.height / 2f + 22f);
+        fuente.getData().setScale(1.0f);
+    }
+
 
     @Override
     public void alRedimensionar(int ancho, int alto) {
