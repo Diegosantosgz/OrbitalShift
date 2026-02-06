@@ -68,62 +68,69 @@ public class Recursos {
 
 
     public void cargar() {
-        // Texturas
-        fondoMuyLejano = new Texture("fondo_muy_lejano.png");
-        fondoLejano    = new Texture("fondo_lejano_nuevo.png");
-        fondoCercano   = new Texture("fondo_cercano_nuevo.png");
+        // Fondos
+        fondoMuyLejano = new Texture("imagenes/fondos/fondo_muy_lejano.png");
+        fondoLejano    = new Texture("imagenes/fondos/fondo_lejano_nuevo.png");
+        fondoCercano   = new Texture("imagenes/fondos/fondo_cercano_nuevo.png");
 
-        naveJugador = new Texture("x-wingHDCenital.png");
-        propulsionEstatica = new Texture("propulsion_estatica.png");
-        propulsionRoja = new Texture("propulsion_larga.png");
+        // Nave
+        naveJugador = new Texture("imagenes/nave/x-wingHDCenital.png");
+        naveConEscudo = new Texture("imagenes/nave/nave_escudo.png");
+        naveAntigravitacional = new Texture("imagenes/nave/nave_antigravitacional.png");
 
-        enemigoNormal = new Texture("enemigo_normal.png");
-        enemigoRapido = new Texture("enemigo_rapido.png");
-        enemigoLento  = new Texture("enemigo_lento.png");
+        // Enemigos
+        enemigoNormal = new Texture("imagenes/enemigos/enemigo_normal.png");
+        enemigoRapido = new Texture("imagenes/enemigos/enemigo_rapido.png");
+        enemigoLento  = new Texture("imagenes/enemigos/enemigo_lento.png");
 
 
 
-        laserVerde = new Texture("laser_verde.png");
-        laserRojo  = new Texture("laser_rojo.png");
+        // Disparos
+        laserVerde = new Texture("imagenes/disparos/laser_verde.png");
+        laserRojo  = new Texture("imagenes/disparos/laser_rojo.png");
 
+        // Efectos
         explosion = new Texture("explosion.png");
-
-        iconoVida = new Texture("vida.png");
-        itemEscudo = new Texture("escudo.png");
-        naveConEscudo = new Texture("nave_escudo.png");
-
         fuerzaGravitacional = new Texture("fuerza_gravitacional.png");
-        itemAntigravitacional = new Texture("esfera_antigravitacional.png");
-        naveAntigravitacional = new Texture("nave_antigravitacional.png");
-
-
-        textos = new Textos();
 
 
 
 
+        // Propulsión
+        propulsionEstatica = new Texture("imagenes/propulsion/propulsion_estatica.png");
+        propulsionRoja     = new Texture("imagenes/propulsion/propulsion_larga.png");
 
-        iconoPuntuacion = new Texture("estrella_record.png");
 
-        touchpad = new Texture("touchpad.png");
+        // Items
+        itemEscudo = new Texture("imagenes/items/escudo.png");
+        itemAntigravitacional = new Texture("imagenes/items/esfera_antigravitacional.png");
 
-        pixelBlanco = crearPixelBlanco();
+
+        // Interfaz (también item vida)
+        touchpad = new Texture("imagenes/interfaz/touchpad.png");
+        iconoVida = new Texture("imagenes/interfaz/vida.png");
+        iconoPuntuacion = new Texture("imagenes/interfaz/estrella_record.png");
+
+
 
         // Música
-        musicaFondo = Gdx.audio.newMusic(Gdx.files.internal("musica_fondo.mp3"));
+        musicaFondo = Gdx.audio.newMusic(Gdx.files.internal("audio/musica/musica_fondo.mp3"));
         musicaFondo.setLooping(true);
         musicaFondo.setVolume(0.3f);
 
         // SFX
-        sfxDisparo = Gdx.audio.newSound(Gdx.files.internal("sonido_disparo.ogg"));
-        sfxExplosion = Gdx.audio.newSound(Gdx.files.internal("explosion.ogg"));
-        sfxGravedad = Gdx.audio.newSound(Gdx.files.internal("sonido_gravitacional.ogg"));
-        sfxEscudo = Gdx.audio.newSound(Gdx.files.internal("sonido_recoger_escudo.ogg"));
-        sfxRomperEscudo = Gdx.audio.newSound(Gdx.files.internal("sonido_romperse_escudo.ogg"));
-        sfxCuracion = Gdx.audio.newSound(Gdx.files.internal("sonido_curacion.ogg"));
-        sfxAntiGravedad = Gdx.audio.newSound(Gdx.files.internal("sonido_esfera_antigravitacional.ogg"));
+        sfxDisparo = Gdx.audio.newSound(Gdx.files.internal("audio/efectos_sonido/sonido_disparo.ogg"));
+        sfxExplosion = Gdx.audio.newSound(Gdx.files.internal("audio/efectos_sonido/explosion.ogg"));
+        sfxGravedad = Gdx.audio.newSound(Gdx.files.internal("audio/efectos_sonido/sonido_gravitacional.ogg"));
+        sfxEscudo = Gdx.audio.newSound(Gdx.files.internal("audio/efectos_sonido/sonido_recoger_escudo.ogg"));
+        sfxRomperEscudo = Gdx.audio.newSound(Gdx.files.internal("audio/efectos_sonido/sonido_romperse_escudo.ogg"));
+        sfxCuracion = Gdx.audio.newSound(Gdx.files.internal("audio/efectos_sonido/sonido_curacion.ogg"));
+        sfxAntiGravedad = Gdx.audio.newSound(Gdx.files.internal("audio/efectos_sonido/sonido_esfera_antigravitacional.ogg"));
 
 
+
+        pixelBlanco = crearPixelBlanco();
+        textos = new Textos();
     }
 
     private Texture crearPixelBlanco() {
