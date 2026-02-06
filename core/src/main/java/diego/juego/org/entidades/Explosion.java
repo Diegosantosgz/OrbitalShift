@@ -1,4 +1,4 @@
-package diego.juego.org;
+package diego.juego.org.entidades;
 
 /**
  * Explosión temporal con fade-out y efecto pop.

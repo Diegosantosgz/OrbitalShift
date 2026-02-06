@@ -1,4 +1,4 @@
-package diego.juego.org;
+package diego.juego.org.escenas;
 
 
 
@@ -16,6 +16,20 @@ import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.viewport.Viewport;
 
 import java.util.Iterator;
+
+import diego.juego.org.entidades.BalaEnemigo;
+import diego.juego.org.entidades.BalaJugador;
+import diego.juego.org.input.ControlTouchpad;
+import diego.juego.org.entidades.Enemigo;
+import diego.juego.org.entidades.EnemigoLento;
+import diego.juego.org.entidades.EnemigoRapido;
+import diego.juego.org.Escena;
+import diego.juego.org.estado.EstadoJuego;
+import diego.juego.org.entidades.Explosion;
+import diego.juego.org.GestorEscenas;
+import diego.juego.org.Main;
+import diego.juego.org.Parallax;
+import diego.juego.org.recursos.Recursos;
 
 /**
  * Escena principal del juego (gameplay): parallax + lógica + render.
@@ -181,10 +195,13 @@ public class EscenaJuego implements Escena {
 
     private void reiniciarPartida() {
         vidaJugador = 3;
-        puntuacion = 0;
         timerScorePop = 0f;
-
         invulnTimer = 0f;
+
+        // Nivel 2 empieza con base de 3000 puntos
+        puntuacion = (EstadoJuego.nivelActual >= 2) ? PUNTOS_NIVEL_1 : 0;
+
+
 
         float shipW = recursos.naveJugador.getWidth() * escala;
         float shipH = recursos.naveJugador.getHeight() * escala;

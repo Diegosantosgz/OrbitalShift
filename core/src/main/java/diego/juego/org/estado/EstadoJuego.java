@@ -1,4 +1,4 @@
-package diego.juego.org;
+package diego.juego.org.estado;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Preferences;

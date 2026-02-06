@@ -1,9 +1,14 @@
-package diego.juego.org;
+package diego.juego.org.escenas;
 
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.utils.viewport.Viewport;
+
+import diego.juego.org.Escena;
+import diego.juego.org.GestorEscenas;
+import diego.juego.org.Main;
+import diego.juego.org.recursos.Recursos;
 
 public class EscenaVictoria implements Escena {
 

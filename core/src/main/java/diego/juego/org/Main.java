@@ -8,6 +8,11 @@ import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
 
+import diego.juego.org.escenas.EscenaMenu;
+import diego.juego.org.estado.EstadoJuego;
+import diego.juego.org.plataforma.PlatformServices;
+import diego.juego.org.recursos.Recursos;
+
 /**
  * Clase principal del juego: solo inicializa motor, recursos y delega en escenas.
  */

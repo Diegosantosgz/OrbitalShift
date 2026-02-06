@@ -1,4 +1,4 @@
-package diego.juego.org;
+package diego.juego.org.plataforma;
 
 public interface PlatformServices {
     void vibrar(int ms);

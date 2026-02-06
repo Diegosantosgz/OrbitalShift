@@ -1,4 +1,4 @@
-package diego.juego.org;
+package diego.juego.org.escenas;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
@@ -8,6 +8,12 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.viewport.Viewport;
+
+import diego.juego.org.Escena;
+import diego.juego.org.estado.EstadoJuego;
+import diego.juego.org.GestorEscenas;
+import diego.juego.org.Main;
+import diego.juego.org.recursos.Recursos;
 
 public class EscenaRecords implements Escena {
 

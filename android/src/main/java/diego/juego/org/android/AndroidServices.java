@@ -5,7 +5,7 @@ import android.os.Build;
 import android.os.VibrationEffect;
 import android.os.Vibrator;
 
-import diego.juego.org.PlatformServices;
+import diego.juego.org.plataforma.PlatformServices;
 
 public class AndroidServices implements PlatformServices {
 

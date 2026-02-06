@@ -1,4 +1,4 @@
-package diego.juego.org;
+package diego.juego.org.escenas;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
@@ -7,7 +7,12 @@ import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.utils.viewport.Viewport;
 
-public class EscenaCreditos implements Escena {
+import diego.juego.org.Escena;
+import diego.juego.org.GestorEscenas;
+import diego.juego.org.Main;
+import diego.juego.org.recursos.Recursos;
+
+public class EscenaAyuda implements Escena {
 
     private final Recursos recursos;
     private final Viewport viewport;
@@ -16,7 +21,7 @@ public class EscenaCreditos implements Escena {
     private final BitmapFont fuente = new BitmapFont();
     private final GlyphLayout layout = new GlyphLayout();
 
-    public EscenaCreditos(Recursos recursos, Viewport viewport, GestorEscenas gestor) {
+    public EscenaAyuda(Recursos recursos, Viewport viewport, GestorEscenas gestor) {
         this.recursos = recursos;
         this.viewport = viewport;
         this.gestor = gestor;
@@ -41,10 +46,10 @@ public class EscenaCreditos implements Escena {
         batch.setColor(1f, 1f, 1f, 1f);
 
         fuente.getData().setScale(5.5f);
-        dibujarCentrado(batch, recursos.textos.t("credits_title"), Main.ANCHO_MUNDO / 2f, 1450f);
+        dibujarCentrado(batch, recursos.textos.t("help_title"), Main.ANCHO_MUNDO / 2f, 1450f);
 
         fuente.getData().setScale(2.2f);
-        dibujarCentrado(batch, recursos.textos.t("credits_body"), Main.ANCHO_MUNDO / 2f, 1100f);
+        dibujarCentrado(batch, recursos.textos.t("help_body"), Main.ANCHO_MUNDO / 2f, 1100f);
 
         fuente.getData().setScale(1.0f);
     }

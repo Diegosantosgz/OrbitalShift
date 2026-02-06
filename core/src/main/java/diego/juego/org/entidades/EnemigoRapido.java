@@ -1,6 +1,8 @@
-package diego.juego.org;
+package diego.juego.org.entidades;
 
 import com.badlogic.gdx.graphics.Texture;
+
+import diego.juego.org.recursos.Recursos;
 
 public class EnemigoRapido extends Enemigo {
 

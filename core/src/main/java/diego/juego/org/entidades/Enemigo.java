@@ -1,8 +1,11 @@
-package diego.juego.org;
+package diego.juego.org.entidades;
 
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Rectangle;
+
+import diego.juego.org.Main;
+import diego.juego.org.recursos.Recursos;
 
 public class Enemigo {
 

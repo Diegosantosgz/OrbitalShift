@@ -1,8 +1,10 @@
-package diego.juego.org;
+package diego.juego.org.input;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.viewport.Viewport;
+
+import diego.juego.org.Main;
 
 /**
  * Control multitouch: un dedo mueve en mitad izquierda; otros disparan en mitad derecha.
