@@ -636,7 +636,20 @@ public class EscenaJuego implements Escena {
 
     @Override
     public void dibujar(SpriteBatch batch) {
-        parallax.dibujar(batch, recursos.fondoMuyLejano, recursos.fondoLejano, recursos.fondoCercano);
+        if (EstadoJuego.nivelActual == 2) {
+            parallax.dibujar(batch,
+                recursos.fondoMuyLejano2,
+                recursos.fondoLejano2,
+                recursos.fondoCercano2
+            );
+        } else {
+            parallax.dibujar(batch,
+                recursos.fondoMuyLejano,
+                recursos.fondoLejano,
+                recursos.fondoCercano
+            );
+        }
+
 
         // item escudo
         if (escudoVisible && limitesEscudo != null) {

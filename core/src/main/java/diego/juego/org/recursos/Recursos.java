@@ -16,6 +16,13 @@ public class Recursos {
     public Texture fondoLejano;
     public Texture fondoCercano;
 
+    // Fondo parallax nivel 2
+
+    public Texture fondoMuyLejano2;
+    public Texture  fondoLejano2;
+    public Texture  fondoCercano2;
+
+
     // Sprites
     public Texture naveJugador;
     public Texture enemigoNormal;
@@ -71,6 +78,12 @@ public class Recursos {
         fondoMuyLejano = new Texture("imagenes/fondos/fondo_muy_lejano.png");
         fondoLejano    = new Texture("imagenes/fondos/fondo_lejano_nuevo.png");
         fondoCercano   = new Texture("imagenes/fondos/fondo_cercano_nuevo.png");
+
+        // Fondos nivel 2
+        fondoMuyLejano2 = new Texture("imagenes/fondos_n2/fondo_muy_lejano_n2.png");
+        fondoLejano2    = new Texture("imagenes/fondos_n2/fondo_lejano_n2.png");
+        fondoCercano2   = new Texture("imagenes/fondos_n2/fondo_cercano_n2.png");
+
 
         // Nave
         naveJugador = new Texture("imagenes/nave/x-wingHDCenital.png");
@@ -146,6 +159,11 @@ public class Recursos {
         liberarTex(fondoMuyLejano);
         liberarTex(fondoLejano);
         liberarTex(fondoCercano);
+
+        liberarTex(fondoMuyLejano2);
+        liberarTex(fondoLejano2);
+        liberarTex(fondoCercano2);
+
 
         liberarTex(naveJugador);
         liberarTex(enemigoNormal);
