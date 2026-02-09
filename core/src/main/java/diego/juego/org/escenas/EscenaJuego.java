@@ -256,14 +256,9 @@ public class EscenaJuego implements Escena {
 
     @Override
     public void alMostrar() {
-        if (EstadoJuego.musicaActivada) {
-            if (!recursos.musicaFondo.isPlaying()) {
-                recursos.musicaFondo.play();
-            }
-        } else {
-            recursos.musicaFondo.pause();
-        }
+        recursos.reproducirMusicaParaNivel(EstadoJuego.nivelActual);
     }
+
 
 
     @Override

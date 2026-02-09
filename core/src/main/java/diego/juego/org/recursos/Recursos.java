@@ -6,6 +6,8 @@ import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
 
+import diego.juego.org.estado.EstadoJuego;
+
 /**
  * Carga y mantiene todos los recursos (texturas/sonidos) compartidos.
  */
@@ -60,6 +62,7 @@ public class Recursos {
 
     // Audio
     public Music musicaFondo;
+    public Music musicaFondoN2;
     public Sound sfxDisparo;
     public Sound sfxExplosion;
     public Sound sfxGravedad;
@@ -129,6 +132,9 @@ public class Recursos {
         musicaFondo = Gdx.audio.newMusic(Gdx.files.internal("audio/musica/musica_fondo.mp3"));
         musicaFondo.setLooping(true);
         musicaFondo.setVolume(0.3f);
+        musicaFondoN2 = Gdx.audio.newMusic(Gdx.files.internal("audio/musica/musica_fondo_n2.mp3"));
+        musicaFondoN2.setLooping(true);
+        musicaFondoN2.setVolume(0.3f);
 
         // SFX
         sfxDisparo = Gdx.audio.newSound(Gdx.files.internal("audio/efectos_sonido/sonido_disparo.ogg"));
@@ -153,6 +159,27 @@ public class Recursos {
         pm.dispose();
         return t;
     }
+    public void reproducirMusicaParaNivel(int nivel) {
+        // Si la música está desactivada: parar todo
+        if (!EstadoJuego.musicaActivada) {
+            if (musicaFondo != null) musicaFondo.pause();
+            if (musicaFondoN2 != null) musicaFondoN2.pause();
+            return;
+        }
+
+        // Parar ambas antes (evita solapes)
+        if (musicaFondo != null) musicaFondo.stop();
+        if (musicaFondoN2 != null) musicaFondoN2.stop();
+
+        // Reproducir la correcta
+        if (nivel >= 2) {
+            if (musicaFondoN2 != null) musicaFondoN2.play();
+        } else {
+            if (musicaFondo != null) musicaFondo.play();
+        }
+    }
+
+
 
     public void liberar() {
         // Texturas
@@ -195,6 +222,8 @@ public class Recursos {
 
         // Audio
         if (musicaFondo != null) musicaFondo.dispose();
+        if (musicaFondoN2 != null) musicaFondoN2.dispose();
+
 
         liberarSfx(sfxDisparo);
         liberarSfx(sfxExplosion);
