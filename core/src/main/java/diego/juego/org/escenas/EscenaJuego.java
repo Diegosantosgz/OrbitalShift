@@ -45,6 +45,27 @@ public class EscenaJuego implements Escena {
 
 
 
+    // ===== PAUSA / MENÚ IN-GAME =====
+    private boolean pausado = false;
+
+    // Botón hamburguesa debajo de la puntuación (arriba derecha)
+    private final Rectangle btnMenuPausa = new Rectangle(
+        Main.ANCHO_MUNDO - 120f,   // X
+        Main.ALTO_MUNDO - 160f,    // Y (ajústalo para que quede debajo del score)
+        80f,                       // W
+        60f                        // H
+    );
+
+    // Panel tipo Game Over
+    private final float pausaPanelW = 820f;
+    private final float pausaPanelH = 620f;
+    private float pausaPanelX, pausaPanelY;
+
+    private final Rectangle btnReanudar = new Rectangle(0, 0, 520f, 120f);
+    private final Rectangle btnVolverMenu = new Rectangle(0, 0, 520f, 120f);
+
+
+
 
     // ===== PROPULSIÓN =====
     private float empuje = 0f;          // 0 = parado, 1 = empuje máximo
@@ -252,7 +273,29 @@ public class EscenaJuego implements Escena {
 
         // touchpad
         controlPad.reset();
+
+        // Panel centrado
+        pausaPanelX = (Main.ANCHO_MUNDO - pausaPanelW) / 2f;
+        pausaPanelY = (Main.ALTO_MUNDO - pausaPanelH) / 2f;
+
+// Botones dentro del panel
+        btnReanudar.set(
+            (Main.ANCHO_MUNDO - btnReanudar.width) / 2f,
+            pausaPanelY + 250f,
+            btnReanudar.width,
+            btnReanudar.height
+        );
+
+        btnVolverMenu.set(
+            (Main.ANCHO_MUNDO - btnVolverMenu.width) / 2f,
+            pausaPanelY + 90f,
+            btnVolverMenu.width,
+            btnVolverMenu.height
+        );
+
+
     }
+
 
     @Override
     public void alMostrar() {
@@ -265,6 +308,23 @@ public class EscenaJuego implements Escena {
     public void actualizar(float delta) {
         parallax.actualizar(delta);
 
+        // Si estamos en pausa: solo UI de pausa
+        if (pausado) {
+            actualizarPausa();
+            return;
+        }
+
+        // Detectar toque en botón hamburguesa
+        if (Gdx.input.justTouched()) {
+            Vector3 v = new Vector3(Gdx.input.getX(), Gdx.input.getY(), 0);
+            viewport.unproject(v);
+
+            if (btnMenuPausa.contains(v.x, v.y)) {
+                pausado = true;
+                return;
+            }
+        }
+
         // BACK/ESC -> volver al menú
         if (Gdx.input.isKeyJustPressed(Input.Keys.BACK) || Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
             gestorEscenas.cambiarA(new EscenaMenu(recursos, viewport, gestorEscenas));
@@ -273,6 +333,33 @@ public class EscenaJuego implements Escena {
 
         actualizarJuego(delta);
     }
+
+    private void actualizarPausa() {
+        if (Gdx.input.isKeyJustPressed(Input.Keys.BACK) || Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
+            pausado = false;
+            return;
+        }
+
+        if (!Gdx.input.justTouched()) return;
+
+        Vector3 v = new Vector3(Gdx.input.getX(), Gdx.input.getY(), 0);
+        viewport.unproject(v);
+
+        if (btnReanudar.contains(v.x, v.y)) {
+            pausado = false;
+            return;
+        }
+
+        if (btnVolverMenu.contains(v.x, v.y)) {
+            pausado = false;
+            gestorEscenas.cambiarA(new EscenaMenu(recursos, viewport, gestorEscenas));
+        }
+    }
+
+
+
+
+
 
     private void actualizarJuego(float delta) {
         if (!victoriaLanzada && EstadoJuego.nivelActual == 1 && puntuacion >= PUNTOS_NIVEL_1) {
@@ -629,22 +716,46 @@ public class EscenaJuego implements Escena {
         }
     }
 
+
+
+    private void dibujarTextoCentrado(SpriteBatch batch, String texto, float centroX, float y) {
+        layout.setText(fuente, texto);
+        float x = centroX - layout.width / 2f;
+        fuente.draw(batch, layout, x, y);
+    }
+
+    private void dibujarBotonRect(SpriteBatch batch, Rectangle r, String texto, boolean primario) {
+        if (primario) batch.setColor(0.15f, 0.65f, 1f, 0.85f);
+        else batch.setColor(0.85f, 0.25f, 0.25f, 0.85f);
+
+        batch.draw(recursos.pixelBlanco, r.x, r.y, r.width, r.height);
+
+        batch.setColor(0f, 0f, 0f, 0.25f);
+        batch.draw(recursos.pixelBlanco, r.x, r.y, r.width, 6f);
+        batch.draw(recursos.pixelBlanco, r.x, r.y + r.height - 6f, r.width, 6f);
+
+        batch.setColor(1f, 1f, 1f, 1f);
+        fuente.getData().setScale(2.2f);
+
+        layout.setText(fuente, texto);
+        float tx = r.x + (r.width - layout.width) / 2f;
+        float ty = r.y + (r.height / 2f) + (layout.height / 2f);
+        fuente.draw(batch, layout, tx, ty);
+
+        fuente.getData().setScale(1.0f);
+    }
+
+
     @Override
     public void dibujar(SpriteBatch batch) {
-        if (EstadoJuego.nivelActual == 2) {
-            parallax.dibujar(batch,
-                recursos.fondoMuyLejano2,
-                recursos.fondoLejano2,
-                recursos.fondoCercano2
-            );
-        } else {
-            parallax.dibujar(batch,
-                recursos.fondoMuyLejano,
-                recursos.fondoLejano,
-                recursos.fondoCercano
-            );
-        }
 
+
+
+        if (EstadoJuego.nivelActual == 2) {
+            parallax.dibujar(batch, recursos.fondoMuyLejano2, recursos.fondoLejano2, recursos.fondoCercano2);
+        } else {
+            parallax.dibujar(batch, recursos.fondoMuyLejano, recursos.fondoLejano, recursos.fondoCercano);
+        }
 
         // item escudo
         if (escudoVisible && limitesEscudo != null) {
@@ -755,8 +866,12 @@ public class EscenaJuego implements Escena {
         dibujarPuntuacion(batch);
         dibujarBarraAntiGravedad(batch);
 
+        dibujarBotonHamburguesa(batch);
 
 
+        if (pausado) {
+            dibujarMenuPausa(batch);
+        }
 
 
 
@@ -765,6 +880,54 @@ public class EscenaJuego implements Escena {
         // touchpad
         if (EstadoJuego.multitouchActivado) dibujarTouchpad(batch);
     }
+
+    private void dibujarBotonHamburguesa(SpriteBatch batch) {
+        // Fondo semitransparente
+        batch.setColor(0f, 0f, 0f, 0.25f);
+        batch.draw(recursos.pixelBlanco, btnMenuPausa.x, btnMenuPausa.y, btnMenuPausa.width, btnMenuPausa.height);
+
+        // 3 líneas blancas
+        batch.setColor(1f, 1f, 1f, 0.80f);
+
+        float padX = 12f;
+        float lineH = 6f;
+        float gap = 10f;
+
+        float x = btnMenuPausa.x + padX;
+        float w = btnMenuPausa.width - padX * 2f;
+
+        float y1 = btnMenuPausa.y + btnMenuPausa.height - 16f;
+        float y2 = y1 - (lineH + gap);
+        float y3 = y2 - (lineH + gap);
+
+        batch.draw(recursos.pixelBlanco, x, y1, w, lineH);
+        batch.draw(recursos.pixelBlanco, x, y2, w, lineH);
+        batch.draw(recursos.pixelBlanco, x, y3, w, lineH);
+
+        batch.setColor(1f, 1f, 1f, 1f);
+    }
+
+
+    private void dibujarMenuPausa(SpriteBatch batch) {
+        batch.setColor(0f, 0f, 0f, 0.65f);
+        batch.draw(recursos.pixelBlanco, 0, 0, Main.ANCHO_MUNDO, Main.ALTO_MUNDO);
+
+        batch.setColor(0.08f, 0.08f, 0.10f, 0.92f);
+        batch.draw(recursos.pixelBlanco, pausaPanelX, pausaPanelY, pausaPanelW, pausaPanelH);
+
+        batch.setColor(0.15f, 0.65f, 1f, 0.90f);
+        batch.draw(recursos.pixelBlanco, pausaPanelX, pausaPanelY + pausaPanelH - 10f, pausaPanelW, 10f);
+
+        batch.setColor(1f, 1f, 1f, 1f);
+
+        fuente.getData().setScale(5.5f);
+        dibujarTextoCentrado(batch, recursos.textos.t("pause_title"), Main.ANCHO_MUNDO / 2f, pausaPanelY + pausaPanelH - 140f);
+        fuente.getData().setScale(1.0f);
+
+        dibujarBotonRect(batch, btnReanudar, recursos.textos.t("pause_resume"), true);
+        dibujarBotonRect(batch, btnVolverMenu, recursos.textos.t("pause_menu"), false);
+    }
+
 
     private void dibujarTouchpad(SpriteBatch batch) {
         if (!controlPad.estaActivo()) return;
@@ -866,14 +1029,13 @@ public class EscenaJuego implements Escena {
     }
     private void dibujarPropulsionDoble(
         SpriteBatch batch,
-        float naveX, float naveY,      // posición real donde se dibuja la nave
-        float naveW, float naveH,      // tamaño real donde se dibuja la nave (para colocar)
-        float baseW, float baseH       // tamaño base (para que la llama NO crezca con escudo/anti)
+        float naveX, float naveY,
+        float naveW, float naveH,
+        float baseW, float baseH
     ) {
         Texture tex = (empuje <= 0.02f) ? recursos.propulsionEstatica : recursos.propulsionRoja;
         if (tex == null) return;
 
-        // === TAMAÑO (SIEMPRE BASE) ===
         float w = baseW * 1.5f;
         float hBase = baseH * 4.0f;
 
@@ -883,13 +1045,11 @@ public class EscenaJuego implements Escena {
             h = hBase * escalaY;
         }
 
-        // === POSICIÓN (USANDO NAVE REAL) ===
         float drawX = naveX + (naveW - w) / 2f;
-        float drawY = naveY - h * 0.50f; // ajusta si hace falta
+        float drawY = naveY - h * 0.50f;
 
         batch.draw(tex, drawX, drawY, w, h);
     }
-
 
 
 
