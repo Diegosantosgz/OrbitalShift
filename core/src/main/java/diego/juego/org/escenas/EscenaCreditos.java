@@ -11,6 +11,8 @@ import diego.juego.org.Escena;
 import diego.juego.org.GestorEscenas;
 import diego.juego.org.Main;
 import diego.juego.org.recursos.Recursos;
+import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.utils.Align;
 
 public class EscenaCreditos implements Escena {
 
@@ -46,19 +48,37 @@ public class EscenaCreditos implements Escena {
         batch.setColor(1f, 1f, 1f, 1f);
 
         fuente.getData().setScale(5.5f);
-        dibujarCentrado(batch, recursos.textos.t("credits_title"), Main.ANCHO_MUNDO / 2f, 1450f);
+        dibujarCentradoTitulo(batch, recursos.textos.t("credits_title"), Main.ANCHO_MUNDO / 2f, 1450f);
 
         fuente.getData().setScale(2.2f);
-        dibujarCentrado(batch, recursos.textos.t("credits_body"), Main.ANCHO_MUNDO / 2f, 1100f);
+
+// ancho del bloque de texto (ajusta si quieres más/menos margen)
+        float maxAncho = Main.ANCHO_MUNDO * 0.85f;
+
+// “yTop” donde empieza el bloque (bájalo/subelo a gusto)
+        dibujarCentradoMultilinea(batch, recursos.textos.t("credits_body"), Main.ANCHO_MUNDO / 2f, 1200f, maxAncho);
+
 
         fuente.getData().setScale(1.0f);
     }
 
-    private void dibujarCentrado(SpriteBatch batch, String texto, float centroX, float y) {
+    private void dibujarCentradoTitulo(SpriteBatch batch, String texto, float centroX, float y) {
         layout.setText(fuente, texto);
         float x = centroX - layout.width / 2f;
         fuente.draw(batch, layout, x, y);
     }
+
+    private void dibujarCentradoMultilinea(SpriteBatch batch, String texto, float centroX, float yTop, float maxAncho) {
+        // wrap = true + Align.center => respeta \n y además parte líneas si son muy largas
+        layout.setText(fuente, texto, com.badlogic.gdx.graphics.Color.WHITE, maxAncho,
+            com.badlogic.gdx.utils.Align.center, true);
+
+        // yTop es “arriba”; font.draw usa baseline, así que bajamos con layout.height
+        float x = centroX - maxAncho / 2f;
+        float y = yTop;
+        fuente.draw(batch, layout, x, y);
+    }
+
 
     @Override public void alRedimensionar(int ancho, int alto) { }
     @Override public void alOcultar() { }

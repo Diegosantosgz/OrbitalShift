@@ -105,8 +105,8 @@ public class Recursos {
         laserRojo  = new Texture("imagenes/disparos/laser_rojo.png");
 
         // Efectos
-        explosion = new Texture("explosion.png");
-        fuerzaGravitacional = new Texture("fuerza_gravitacional.png");
+        explosion = new Texture("imagenes/efectos/explosion.png");
+        fuerzaGravitacional = new Texture("imagenes/efectos/fuerza_gravitacional.png");
 
 
 
