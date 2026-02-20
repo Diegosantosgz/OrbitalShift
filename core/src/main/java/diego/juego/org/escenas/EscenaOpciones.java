@@ -203,7 +203,7 @@ public class EscenaOpciones implements Escena {
         dibujarTextoCentrado(batch, texto, r.x + r.width / 2f, r.y + r.height / 2f + 22f);
     }
 
-    @Override public void alRedimensionar(int ancho, int alto) { }
+    @Override public void alRedimensionar(int ancho, int alto) { viewport.update(ancho,alto, true); }
     @Override public void alOcultar() { }
 
     @Override

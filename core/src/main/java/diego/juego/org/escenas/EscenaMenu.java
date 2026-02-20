@@ -203,10 +203,7 @@ public class EscenaMenu implements Escena {
         fuente.draw(batch, layout, x, y);
     }
 
-    @Override
-    public void alRedimensionar(int ancho, int alto) {
-        // El viewport lo actualiza Main; aquí no hace falta nada.
-    }
+    @Override public void alRedimensionar(int ancho, int alto) { viewport.update(ancho,alto, true); }
 
     @Override
     public void alOcultar() {

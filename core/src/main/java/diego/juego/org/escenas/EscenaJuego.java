@@ -1211,9 +1211,9 @@ public class EscenaJuego implements Escena {
     }
 
 
-    @Override public void alRedimensionar(int ancho, int alto) {
+    @Override public void alRedimensionar(int ancho, int alto) { viewport.update(ancho,alto, true); }
 
-    }
+
     @Override public void alOcultar() {
 
     }

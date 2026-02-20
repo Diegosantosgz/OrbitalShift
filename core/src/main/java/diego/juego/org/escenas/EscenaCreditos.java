@@ -79,8 +79,7 @@ public class EscenaCreditos implements Escena {
         fuente.draw(batch, layout, x, y);
     }
 
-
-    @Override public void alRedimensionar(int ancho, int alto) { }
+    @Override public void alRedimensionar(int ancho, int alto) { viewport.update(ancho,alto, true); }
     @Override public void alOcultar() { }
     @Override public void liberar() { fuente.dispose(); }
 }

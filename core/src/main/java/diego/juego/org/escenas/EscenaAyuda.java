@@ -2,10 +2,14 @@ package diego.juego.org.escenas;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.viewport.Viewport;
+import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.utils.Align;
 
 import diego.juego.org.Escena;
 import diego.juego.org.GestorEscenas;
@@ -39,17 +43,44 @@ public class EscenaAyuda implements Escena {
         }
     }
 
+
+
     @Override
     public void dibujar(SpriteBatch batch) {
+        float W = viewport.getWorldWidth();
+        float H = viewport.getWorldHeight();
+
+        // fondo oscuro
         batch.setColor(0f, 0f, 0f, 0.65f);
-        batch.draw(recursos.pixelBlanco, 0, 0, Main.ANCHO_MUNDO, Main.ALTO_MUNDO);
+        batch.draw(recursos.pixelBlanco, 0, 0, W, H);
         batch.setColor(1f, 1f, 1f, 1f);
 
-        fuente.getData().setScale(5.5f);
-        dibujarCentrado(batch, recursos.textos.t("help_title"), Main.ANCHO_MUNDO / 2f, 1450f);
+        // ===== TÍTULO =====
+        fuente.getData().setScale(Math.max(3.5f, H / 350f)); // escala relativa
+        String titulo = recursos.textos.t("help_title");
+        layout.setText(fuente, titulo);
+        fuente.draw(batch, layout, (W - layout.width) / 2f, H - H * 0.12f);
 
-        fuente.getData().setScale(2.2f);
-        dibujarCentrado(batch, recursos.textos.t("help_body"), Main.ANCHO_MUNDO / 2f, 1100f);
+        // ===== CUERPO (WRAP + CENTER) =====
+        fuente.getData().setScale(Math.max(1.6f, H / 900f));
+
+        float margen = W * 0.08f;             // 8% de margen lateral
+        float maxWidth = W - margen * 2f;     // ancho útil para el wrap
+        float yTop = H - H * 0.25f;           // empieza debajo del título
+
+        String body = recursos.textos.t("help_body");
+
+        layout.setText(
+            fuente,
+            body,
+            Color.WHITE,
+            maxWidth,
+            Align.center,
+            true   // wrap
+        );
+
+        // OJO: draw x,y aquí usa x=izquierda del bloque (margen) y y=arriba del bloque
+        fuente.draw(batch, layout, margen, yTop);
 
         fuente.getData().setScale(1.0f);
     }
@@ -59,8 +90,19 @@ public class EscenaAyuda implements Escena {
         float x = centroX - layout.width / 2f;
         fuente.draw(batch, layout, x, y);
     }
+    private void dibujarMultilineaCentrada(SpriteBatch batch, String texto, float centroX, float yTop, float lineHeight) {
+        String[] lineas = texto.split("\n");
+        float y = yTop;
 
-    @Override public void alRedimensionar(int ancho, int alto) { }
+        for (String linea : lineas) {
+            layout.setText(fuente, linea);
+            float x = centroX - layout.width / 2f;
+            fuente.draw(batch, layout, x, y);
+            y -= lineHeight;
+        }
+    }
+
+    @Override public void alRedimensionar(int ancho, int alto) { viewport.update(ancho,alto, true); }
     @Override public void alOcultar() { }
     @Override public void liberar() { fuente.dispose(); }
 }

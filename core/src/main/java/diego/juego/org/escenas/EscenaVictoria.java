@@ -67,7 +67,7 @@ public class EscenaVictoria implements Escena {
     }
 
     @Override public void alMostrar() {}
-    @Override public void alRedimensionar(int a, int b) {}
+    @Override public void alRedimensionar(int ancho, int alto) { viewport.update(ancho,alto, true); }
     @Override public void alOcultar() {}
     @Override public void liberar() { fuente.dispose(); }
 }
