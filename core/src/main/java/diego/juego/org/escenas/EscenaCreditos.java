@@ -38,7 +38,13 @@ public class EscenaCreditos implements Escena {
             || Gdx.input.justTouched()) {
 
             gestor.cambiarA(new EscenaMenu(recursos, viewport, gestor));
+
         }
+
+            // Asegura que el bundle está en el idioma actual
+        if (recursos.textos != null) recursos.textos.recargar();
+
+
     }
 
     @Override
@@ -60,6 +66,8 @@ public class EscenaCreditos implements Escena {
 
 
         fuente.getData().setScale(1.0f);
+
+
     }
 
     private void dibujarCentradoTitulo(SpriteBatch batch, String texto, float centroX, float y) {
