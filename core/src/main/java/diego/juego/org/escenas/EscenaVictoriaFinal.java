@@ -13,6 +13,7 @@ import diego.juego.org.Escena;
 import diego.juego.org.GestorEscenas;
 import diego.juego.org.Main;
 import diego.juego.org.recursos.Recursos;
+import diego.juego.org.estado.EstadoJuego;
 
 public final class EscenaVictoriaFinal implements Escena {
 
@@ -49,6 +50,7 @@ public final class EscenaVictoriaFinal implements Escena {
     @Override
     public void actualizar(float delta) {
         if (Gdx.input.isKeyJustPressed(Input.Keys.BACK) || Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
+            EstadoJuego.resetRun();
             gestorEscenas.cambiarA(new EscenaMenu(recursos, viewport, gestorEscenas));
             return;
         }
@@ -59,6 +61,7 @@ public final class EscenaVictoriaFinal implements Escena {
         viewport.unproject(v);
 
         if (btnMenu.contains(v.x, v.y)) {
+            EstadoJuego.resetRun();
             gestorEscenas.cambiarA(new EscenaMenu(recursos, viewport, gestorEscenas));
         }
     }

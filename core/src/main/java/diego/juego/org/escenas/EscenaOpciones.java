@@ -90,8 +90,10 @@ public class EscenaOpciones implements Escena {
 
         if (btnToggleMusica.contains(x, y)) {
             EstadoJuego.musicaActivada = !EstadoJuego.musicaActivada;
-            if (EstadoJuego.musicaActivada) recursos.musicaFondo.play();
-            else recursos.musicaFondo.pause();
+
+            // Aplica a la música que toque ahora mismo (menú o nivel actual)
+            recursos.reproducirMusicaParaNivel(EstadoJuego.nivelActual);
+
             return;
         }
 

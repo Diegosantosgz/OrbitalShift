@@ -165,8 +165,8 @@ public class Recursos {
     public void reproducirMusicaParaNivel(int nivel) {
         // Si la música está desactivada: parar todo
         if (!EstadoJuego.musicaActivada) {
-            if (musicaFondo != null) musicaFondo.pause();
-            if (musicaFondoN2 != null) musicaFondoN2.pause();
+            if (musicaFondo != null) musicaFondo.stop();
+            if (musicaFondoN2 != null) musicaFondoN2.stop();
             return;
         }
 

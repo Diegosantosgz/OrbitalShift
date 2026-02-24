@@ -6,7 +6,7 @@ import com.badlogic.gdx.utils.Array;
 
 public final class BossNivel2 {
 
-    private static final int VIDA_MAX = 50;
+    private static final int VIDA_MAX = 200;
 
     private final Rectangle limites;
     private final Array<BalaBoss> bufferBalas = new Array<>();
@@ -40,15 +40,17 @@ public final class BossNivel2 {
     private void generarRafaga() {
         int cantidad = MathUtils.random(3, 5);
 
-        float balaW = 32f;
-        float balaH = 60f;
+        // Tamaño de las balas del Boss
+        float balaW = 64f;
+        float balaH = 110f;
 
         for (int i = 0; i < cantidad; i++) {
             float spawnX = MathUtils.random(limites.x, limites.x + limites.width - balaW);
             float spawnY = limites.y;
 
             float angulo = 270f + MathUtils.random(-22f, 22f);
-            float velocidad = MathUtils.random(180f, 320f);
+            // Velocidad de las balas del Boss
+            float velocidad = MathUtils.random(350f, 600f);
 
             float vx = MathUtils.cosDeg(angulo) * velocidad;
             float vy = MathUtils.sinDeg(angulo) * velocidad;

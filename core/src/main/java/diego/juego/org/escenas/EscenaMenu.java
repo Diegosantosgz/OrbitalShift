@@ -68,11 +68,8 @@ public class EscenaMenu implements Escena {
 
     @Override
     public void alMostrar() {
-        if (EstadoJuego.musicaActivada) {
-            recursos.musicaFondo.play();
-        } else {
-            recursos.musicaFondo.pause();
-        }
+        EstadoJuego.nivelActual = 1;
+        recursos.reproducirMusicaParaNivel(1);
     }
 
 
@@ -107,7 +104,7 @@ public class EscenaMenu implements Escena {
         float y = v.y;
 
         if (btnJugar.contains(x, y)) {
-            // Ir a jugar
+            EstadoJuego.resetRun();
             gestorEscenas.cambiarA(new EscenaJuego(recursos, viewport, gestorEscenas));
             return;
         }

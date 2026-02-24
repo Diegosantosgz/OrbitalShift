@@ -106,6 +106,13 @@ public final class EstadoJuego {
         while (out.length() < 3) out.append('-');
         return out.toString();
     }
+    // ===== Reset de partida/run (niveles, flags de pantallas, etc.) =====
+    public static void resetRun() {
+        nivelActual = 1;
+
+        // Para que al volver a jugar no se quede con flags del game over anterior
+        resetFlagsGameOver();
+    }
 
     // ===== Reset =====
     public static void resetTop() {
@@ -115,6 +122,7 @@ public final class EstadoJuego {
         }
         guardarScores();
     }
+
 
     // Alias para no romper escenas viejas
     public static void resetTopScores() { resetTop(); }
