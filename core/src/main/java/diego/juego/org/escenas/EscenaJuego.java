@@ -23,6 +23,8 @@ import diego.juego.org.input.ControlTouchpad;
 import diego.juego.org.entidades.Enemigo;
 import diego.juego.org.entidades.EnemigoLento;
 import diego.juego.org.entidades.EnemigoRapido;
+import diego.juego.org.entidades.BalaBoss;
+import diego.juego.org.entidades.BossNivel2;
 import diego.juego.org.Escena;
 import diego.juego.org.estado.EstadoJuego;
 import diego.juego.org.entidades.Explosion;
@@ -41,6 +43,21 @@ public class EscenaJuego implements Escena {
     private final GestorEscenas gestorEscenas;
 
     private static final int PUNTOS_NIVEL_1 = 3000;
+    private static final int PUNTOS_BOSS_NIVEL_2 = 6000;
+
+    // BOSS
+    private BossNivel2 boss;
+    private boolean bossAparecido = false;
+    private boolean bossDerrotado = false;
+
+    // ===== MUERTE BOSS: EXPLOSIONES EN CADENA =====
+    private boolean bossMuriendo = false;
+    private float bossDeathTimer = 0f;
+    private float bossDeathDuration = 4.0f;     // duración total del “romperse”
+    private float bossDeathSpawnEvery = 0.45f;  // cada cuánto sale una explosión
+    private float bossDeathSpawnTimer = 0f;
+
+    private final Array<BalaBoss> balasBoss = new Array<>();
     private boolean victoriaLanzada = false;
 
 
@@ -144,13 +161,19 @@ public class EscenaJuego implements Escena {
     private float margenLateralGravedad = 60f;
     private float tamSpriteGravedad = 220f;
 
-    // ===== HUD: barra antigravedad =====
+    //  HUD: barra antigravedad
     private final float barraAntiW = 520f;
     private final float barraAntiH = 18f;
     private final float barraAntiX = (Main.ANCHO_MUNDO - barraAntiW) / 2f;
     private final float barraAntiY = Main.ALTO_MUNDO - 1850f; // Barra duracion antigravedad debajo del marcador
     private final float barraPadding = 4f;
 
+    //  HUD: barra de vida del boss
+    private final float barraBossW = 900f;
+    private final float barraBossH = 22f;
+    private final float barraBossX = (Main.ANCHO_MUNDO - barraBossW) / 2f;
+    private final float barraBossY = 55f; // abajo, ajusta si choca con algo
+    private final float barraBossPadding = 4f;
 
     private float rotGravedad = 0f;
     private float velRotGravedad = 50f;
@@ -239,6 +262,12 @@ public class EscenaJuego implements Escena {
         timerSpawnEnemigos = 0f;
         timerDisparo = 0f;
 
+        // boss
+        boss = null;
+        bossAparecido = false;
+        bossDerrotado = false;
+        balasBoss.clear();
+
         delaySpawnEnemigos = delaySpawnInicio;
         timerDificultad = 0f;
 
@@ -306,6 +335,11 @@ public class EscenaJuego implements Escena {
 
     @Override
     public void actualizar(float delta) {
+        // DEBUG: Forzar boss con tecla B
+        // Eliminar antes de entregar o dejar para que el Javi pueda testear el boss
+        if (Gdx.input.isKeyJustPressed(Input.Keys.B)) {
+            puntuacion = PUNTOS_BOSS_NIVEL_2;
+        }
         parallax.actualizar(delta);
 
         // Si estamos en pausa: solo UI de pausa
@@ -371,6 +405,48 @@ public class EscenaJuego implements Escena {
         }
 
         if (vidaJugador <= 0) return;
+
+        // ===== SECUENCIA MUERTE BOSS (PAUSA GAMEPLAY) =====
+        if (bossMuriendo && boss != null) {
+
+            // no queremos que el boss siga “activo” ni que entren cosas
+            enemigos.clear();
+            balasEnemigas.clear();
+            balasBoss.clear();
+
+            bossDeathTimer -= delta;
+            bossDeathSpawnTimer -= delta;
+
+            if (bossDeathSpawnTimer <= 0f) {
+                bossDeathSpawnTimer = bossDeathSpawnEvery;
+
+                Rectangle r = boss.getLimites();
+
+                // Explosión “encima” del boss: punto aleatorio dentro del rect del boss
+                float cx = MathUtils.random(r.x + 40f, r.x + r.width - 40f);
+                float cy = MathUtils.random(r.y + 40f, r.y + r.height - 40f);
+
+                // Tamaño más contenido y lento (ajusta a gusto)
+                float size = MathUtils.random(r.width * 0.10f, r.width * 0.14f);
+
+                agregarExplosionCentrada(cx, cy, size);
+
+                // Un sonido por explosión (no spam)
+                if (EstadoJuego.sfxActivados && recursos.sfxExplosion != null) {
+                    float vol = 0.55f;
+                    float pitch = 0.95f + MathUtils.random(0.10f);
+                    recursos.sfxExplosion.play(vol, pitch, 0f);
+                }
+            }
+
+            // Cuando termina, VICTORIA FINAL
+            if (bossDeathTimer <= 0f) {
+                bossMuriendo = false;
+                gestorEscenas.cambiarA(new EscenaVictoriaFinal(recursos, viewport, gestorEscenas, puntuacion));
+            }
+
+            return; // IMPORTANTÍSIMO: pausa el gameplay mientras se rompe
+        }
 
         float dx = 0f, dy = 0f;
 
@@ -603,16 +679,29 @@ public class EscenaJuego implements Escena {
         }
 
 
-
-
-
         if (timerScorePop > 0f) timerScorePop -= delta;
 
-        // ===== spawn enemigos =====
-        timerSpawnEnemigos += delta;
-        if (timerSpawnEnemigos >= delaySpawnEnemigos) {
-            spawnEnemigo();
+        if (EstadoJuego.nivelActual == 2 && !bossAparecido && puntuacion >= PUNTOS_BOSS_NIVEL_2) {
+            bossAparecido = true;
+            boss = new BossNivel2(Main.ANCHO_MUNDO, Main.ALTO_MUNDO);
+
+            // Opcional: limpiar enemigos/balas normales para que sea “combate de boss”
+            enemigos.clear();
+            balasEnemigas.clear();
+
+            // Si quieres: reiniciar temporizadores para que no te entren spawns residuales
             timerSpawnEnemigos = 0f;
+        }
+
+        // ===== spawn enemigos =====
+        boolean combateBoss = (EstadoJuego.nivelActual == 2 && bossAparecido && boss != null && !bossDerrotado);
+
+        if (!combateBoss) {
+            timerSpawnEnemigos += delta;
+            if (timerSpawnEnemigos >= delaySpawnEnemigos) {
+                spawnEnemigo();
+                timerSpawnEnemigos = 0f;
+            }
         }
 
         // ===== actualizar enemigos + disparo enemigo =====
@@ -639,6 +728,20 @@ public class EscenaJuego implements Escena {
             BalaEnemigo b = itB.next();
             b.actualizar(delta);
             if (b.fueraPantalla()) itB.remove();
+        }
+        if (boss != null && !bossDerrotado) {
+            boss.actualizar(delta);
+
+            Array<BalaBoss> nuevas = boss.extraerBalasGeneradas();
+            for (int i = 0; i < nuevas.size; i++) {
+                balasBoss.add(nuevas.get(i));
+            }
+        }
+
+        for (Iterator<BalaBoss> it = balasBoss.iterator(); it.hasNext(); ) {
+            BalaBoss b = it.next();
+            b.actualizar(delta);
+            if (b.fueraPantalla(Main.ANCHO_MUNDO, Main.ALTO_MUNDO)) it.remove();
         }
 
         // ===== colisiones bala jugador -> enemigo =====
@@ -670,13 +773,38 @@ public class EscenaJuego implements Escena {
 
             if (impacto) itBJ.remove(); // la bala desaparece siempre que impacta
         }
+        if (boss != null && !bossDerrotado && boss.estaActivo()) {
+            for (Iterator<BalaJugador> itBJ = balasJugador.iterator(); itBJ.hasNext(); ) {
+                BalaJugador b = itBJ.next();
+
+                if (b.limites.overlaps(boss.getLimites())) {
+                    itBJ.remove();
+                    boss.recibirImpacto();
+
+                    if (boss.estaMuerto()) {
+                        bossDerrotado = true;
+                        balasBoss.clear();
+
+                        // Inicia secuencia lenta
+                        bossMuriendo = true;
+                        bossDeathTimer = bossDeathDuration;
+                        bossDeathSpawnTimer = 0f;
+
+
+                        return;
+                    }
+                }
+            }
+        }
 
         // ===== colisión bala enemigo -> jugador =====
         if (invulnTimer <= 0f) {
-            for (Iterator<BalaEnemigo> it = balasEnemigas.iterator(); it.hasNext(); ) {
-                BalaEnemigo b = it.next();
 
-                if (b.limites.overlaps(limitesJugador)) {
+            // 1) Balas enemigas normales
+            for (Iterator<BalaEnemigo> it = balasEnemigas.iterator(); it.hasNext(); ) {
+                BalaEnemigo bala = it.next();
+
+                if (bala.limites.overlaps(limitesJugador)) {
                     it.remove();
 
                     if (escudoActivo) {
@@ -700,10 +828,49 @@ public class EscenaJuego implements Escena {
                             reproducir(recursos.sfxExplosion, 1.0f);
 
                             gestorEscenas.cambiarA(new EscenaGameOver(recursos, viewport, gestorEscenas, puntuacion));
+                            return;
                         }
                     }
 
                     break;
+                }
+            }
+
+            // 2) Balas del boss
+            if (bossAparecido && !bossDerrotado) {
+                for (Iterator<BalaBoss> itBoss = balasBoss.iterator(); itBoss.hasNext(); ) {
+                    BalaBoss balaBoss = itBoss.next();
+
+                    if (balaBoss.limites.overlaps(limitesJugador)) {
+                        itBoss.remove();
+
+                        if (escudoActivo) {
+                            escudoActivo = false;
+                            invulnTimer = 0.15f;
+                            reproducir(recursos.sfxRomperEscudo, 0.9f);
+                        } else {
+                            vidaJugador--;
+                            invulnTimer = INVULN_TIME;
+
+                            vibrarGolpe();
+
+                            agregarExplosionCentrada(x + shipW / 2f, y + shipH / 2f, shipW * 1.1f);
+                            reproducir(recursos.sfxExplosion, 0.3f);
+
+                            if (vidaJugador <= 0) {
+                                vidaJugador = 0;
+
+                                vibrarMuerte();
+                                agregarExplosionCentrada(x + shipW / 2f, y + shipH / 2f, shipW * 1.9f);
+                                reproducir(recursos.sfxExplosion, 1.0f);
+
+                                gestorEscenas.cambiarA(new EscenaGameOver(recursos, viewport, gestorEscenas, puntuacion));
+                                return;
+                            }
+                        }
+
+                        break;
+                    }
                 }
             }
         }
@@ -713,6 +880,42 @@ public class EscenaJuego implements Escena {
             Explosion ex = it.next();
             ex.actualizar(delta);
             if (ex.terminada()) it.remove();
+        }
+        // ===== SECUENCIA MUERTE BOSS: EXPLOSIONES DISTRIBUIDAS =====
+        if (bossMuriendo && boss != null) {
+            bossDeathTimer -= delta;
+            bossDeathSpawnTimer -= delta;
+
+            if (bossDeathSpawnTimer <= 0f) {
+                bossDeathSpawnTimer = bossDeathSpawnEvery;
+
+                Rectangle r = boss.getLimites();
+
+                // Punto aleatorio dentro del boss
+                float cx = MathUtils.random(r.x, r.x + r.width);
+                float cy = MathUtils.random(r.y, r.y + r.height);
+
+                // Tamaño aleatorio (ajusta a gusto)
+                float size = MathUtils.random(r.width * 0.08f, r.width * 0.16f);
+
+                agregarExplosionCentrada(cx, cy, size);
+
+                // Varias explosiones sonoras (con variación para que no sea repetitivo)
+                if (EstadoJuego.sfxActivados && recursos.sfxExplosion != null) {
+                    float vol = 0.35f + MathUtils.random(0.35f);     // 0.35–0.70
+                    float pitch = 0.85f + MathUtils.random(0.30f);   // 0.85–1.15
+                    recursos.sfxExplosion.play(vol, pitch, 0f);
+                }
+            }
+
+            if (bossDeathTimer <= 0f) {
+                bossMuriendo = false;
+
+                // Aquí ya haces lo que quieras al terminar:
+                // gestorEscenas.cambiarA(new EscenaVictoriaFinal(...));
+                // o volver a menú:
+                // gestorEscenas.cambiarA(new EscenaMenu(recursos, viewport, gestorEscenas));
+            }
         }
     }
 
@@ -798,6 +1001,16 @@ public class EscenaJuego implements Escena {
         for (BalaEnemigo b : balasEnemigas) batch.draw(recursos.laserRojo, b.x, b.y, b.w, b.h);
         for (BalaJugador b : balasJugador) batch.draw(recursos.laserVerde, b.x, b.y, b.w, b.h);
 
+        // Boss + balas del boss
+        if (boss != null && (bossMuriendo || !bossDerrotado) && recursos.boss != null) {
+            Rectangle r = boss.getLimites();
+            batch.draw(recursos.boss, r.x, r.y, r.width, r.height);
+        }
+
+        for (BalaBoss b : balasBoss) {
+            batch.draw(recursos.laserRojo, b.x, b.y, b.w, b.h);
+        }
+
 
         // jugador
         float baseW = recursos.naveJugador.getWidth() * escala;
@@ -865,6 +1078,7 @@ public class EscenaJuego implements Escena {
         dibujarVidas(batch);
         dibujarPuntuacion(batch);
         dibujarBarraAntiGravedad(batch);
+        dibujarBarraVidaBoss(batch);
 
         dibujarBotonHamburguesa(batch);
 
@@ -1023,6 +1237,45 @@ public class EscenaJuego implements Escena {
             float blink = (float) (0.35f + 0.35f * Math.sin(timerAntiGrav * 18f));
             batch.setColor(1f, 1f, 1f, blink);
             batch.draw(recursos.pixelBlanco, barraAntiX, barraAntiY, barraAntiW, barraAntiH);
+        }
+
+        batch.setColor(1f, 1f, 1f, 1f);
+    }
+    private void dibujarBarraVidaBoss(SpriteBatch batch) {
+        if (boss == null) return;
+        if (bossDerrotado) return;
+        if (!boss.estaActivo()) return;
+
+        int vida = boss.getVida();
+        int vidaMax = boss.getVidaMax();
+
+        float progreso = MathUtils.clamp((float) vida / (float) vidaMax, 0f, 1f);
+
+        // Fondo oscuro
+        batch.setColor(0f, 0f, 0f, 0.60f);
+        batch.draw(recursos.pixelBlanco, barraBossX, barraBossY, barraBossW, barraBossH);
+
+        // Marco
+        batch.setColor(1f, 1f, 1f, 0.85f);
+        batch.draw(recursos.pixelBlanco, barraBossX, barraBossY, barraBossW, 2f);
+        batch.draw(recursos.pixelBlanco, barraBossX, barraBossY + barraBossH - 2f, barraBossW, 2f);
+        batch.draw(recursos.pixelBlanco, barraBossX, barraBossY, 2f, barraBossH);
+        batch.draw(recursos.pixelBlanco, barraBossX + barraBossW - 2f, barraBossY, 2f, barraBossH);
+
+        // Relleno rojo
+        float innerX = barraBossX + barraBossPadding;
+        float innerY = barraBossY + barraBossPadding;
+        float innerW = (barraBossW - barraBossPadding * 2f) * progreso;
+        float innerH = barraBossH - barraBossPadding * 2f;
+
+        batch.setColor(1f, 0.15f, 0.15f, 0.95f);
+        batch.draw(recursos.pixelBlanco, innerX, innerY, innerW, innerH);
+
+        // Parpadeo cuando queda poca vida
+        if (vida <= 6) {
+            float blink = 0.25f + 0.35f * (float)Math.sin((vidaMax - vida) * 2f + (Gdx.graphics.getDeltaTime() * 20f));
+            batch.setColor(1f, 1f, 1f, blink);
+            batch.draw(recursos.pixelBlanco, barraBossX, barraBossY, barraBossW, barraBossH);
         }
 
         batch.setColor(1f, 1f, 1f, 1f);

@@ -31,6 +31,8 @@ public class Recursos {
     public Texture enemigoRapido;
     public Texture enemigoLento;
 
+    public Texture boss;
+
     public Texture laserVerde;
     public Texture laserRojo;
 
@@ -97,6 +99,7 @@ public class Recursos {
         enemigoNormal = new Texture("imagenes/enemigos/enemigo_normal.png");
         enemigoRapido = new Texture("imagenes/enemigos/enemigo_rapido.png");
         enemigoLento  = new Texture("imagenes/enemigos/enemigo_lento.png");
+        boss = new Texture("imagenes/enemigos/boss.png");
 
 
 
@@ -193,9 +196,11 @@ public class Recursos {
 
 
         liberarTex(naveJugador);
+
         liberarTex(enemigoNormal);
         liberarTex(enemigoRapido);
         liberarTex(enemigoLento);
+        liberarTex(boss);
 
 
 
