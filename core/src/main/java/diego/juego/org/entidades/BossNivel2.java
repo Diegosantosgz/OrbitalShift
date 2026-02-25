@@ -17,19 +17,39 @@ public final class BossNivel2 {
     private float timerRafaga = 0f;
     private float intervaloRafaga = 0.85f;
 
+    // ===== ENTRADA DEL BOSS (NUEVO) =====
+    private boolean entrando = true;
+    private float targetY;           // y final donde se queda (la de antes)
+    private float velEntrada = 220f; // velocidad de bajada (ajústala si quieres)
+
     public BossNivel2(float mundoAncho, float mundoAlto) {
         float w = mundoAncho * 0.92f;
         float h = mundoAlto * 0.26f;
 
         float x = (mundoAncho - w) / 2f;
-        float y = mundoAlto - h - (mundoAlto * 0.02f);
 
-        limites = new Rectangle(x, y, w, h);
+        // La Y final EXACTA que ya tenías
+        targetY = mundoAlto - h - (mundoAlto * 0.02f);
+
+        // Empieza fuera de pantalla por arriba (sin cambiar tamaño ni nada)
+        float startY = mundoAlto + h + 40f;
+
+        limites = new Rectangle(x, startY, w, h);
     }
 
     public void actualizar(float delta) {
         if (!activo) return;
 
+        // ===== mover hacia abajo poco a poco (NUEVO) =====
+        if (entrando) {
+            limites.y -= velEntrada * delta;
+            if (limites.y <= targetY) {
+                limites.y = targetY;
+                entrando = false;
+            }
+        }
+
+        // ===== TU DISPARO TAL CUAL =====
         timerRafaga += delta;
         if (timerRafaga >= intervaloRafaga) {
             timerRafaga = 0f;

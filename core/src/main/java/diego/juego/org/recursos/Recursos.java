@@ -65,6 +65,8 @@ public class Recursos {
     // Audio
     public Music musicaFondo;
     public Music musicaFondoN2;
+
+    public Music musicaBoss;
     public Sound sfxDisparo;
     public Sound sfxExplosion;
     public Sound sfxGravedad;
@@ -138,6 +140,9 @@ public class Recursos {
         musicaFondoN2 = Gdx.audio.newMusic(Gdx.files.internal("audio/musica/musica_fondo_n2.mp3"));
         musicaFondoN2.setLooping(true);
         musicaFondoN2.setVolume(0.3f);
+        musicaBoss = Gdx.audio.newMusic(Gdx.files.internal("audio/musica/musica_boss.mp3"));
+        musicaBoss.setLooping(true);
+        musicaBoss.setVolume(0.35f);
 
         // SFX
         sfxDisparo = Gdx.audio.newSound(Gdx.files.internal("audio/efectos_sonido/sonido_disparo.ogg"));
@@ -163,18 +168,19 @@ public class Recursos {
         return t;
     }
     public void reproducirMusicaParaNivel(int nivel) {
-        // Si la música está desactivada: parar todo
-        if (!EstadoJuego.musicaActivada) {
-            if (musicaFondo != null) musicaFondo.stop();
-            if (musicaFondoN2 != null) musicaFondoN2.stop();
+
+        // Parar todas primero (evita solapes)
+        if (musicaFondo != null) musicaFondo.stop();
+        if (musicaFondoN2 != null) musicaFondoN2.stop();
+        if (musicaBoss != null) musicaBoss.stop();
+
+        if (!EstadoJuego.musicaActivada) return;
+
+        if (nivel == 99) { // usamos 99 como "modo boss"
+            if (musicaBoss != null) musicaBoss.play();
             return;
         }
 
-        // Parar ambas antes (evita solapes)
-        if (musicaFondo != null) musicaFondo.stop();
-        if (musicaFondoN2 != null) musicaFondoN2.stop();
-
-        // Reproducir la correcta
         if (nivel >= 2) {
             if (musicaFondoN2 != null) musicaFondoN2.play();
         } else {
@@ -228,6 +234,7 @@ public class Recursos {
         // Audio
         if (musicaFondo != null) musicaFondo.dispose();
         if (musicaFondoN2 != null) musicaFondoN2.dispose();
+        if (musicaBoss != null) musicaBoss.dispose();
 
 
         liberarSfx(sfxDisparo);

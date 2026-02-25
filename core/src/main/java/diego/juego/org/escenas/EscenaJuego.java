@@ -439,9 +439,11 @@ public class EscenaJuego implements Escena {
                 }
             }
 
+
             // Cuando termina, VICTORIA FINAL
             if (bossDeathTimer <= 0f) {
                 bossMuriendo = false;
+                recursos.reproducirMusicaParaNivel(EstadoJuego.nivelActual);
                 gestorEscenas.cambiarA(new EscenaVictoriaFinal(recursos, viewport, gestorEscenas, puntuacion));
             }
 
@@ -684,6 +686,7 @@ public class EscenaJuego implements Escena {
         if (EstadoJuego.nivelActual == 2 && !bossAparecido && puntuacion >= PUNTOS_BOSS_NIVEL_2) {
             bossAparecido = true;
             boss = new BossNivel2(Main.ANCHO_MUNDO, Main.ALTO_MUNDO);
+            recursos.reproducirMusicaParaNivel(99);
 
             // Opcional: limpiar enemigos/balas normales para que sea “combate de boss”
             enemigos.clear();
