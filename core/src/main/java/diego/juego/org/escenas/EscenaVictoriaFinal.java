@@ -12,8 +12,8 @@ import com.badlogic.gdx.utils.viewport.Viewport;
 import diego.juego.org.Escena;
 import diego.juego.org.GestorEscenas;
 import diego.juego.org.Main;
-import diego.juego.org.recursos.Recursos;
 import diego.juego.org.estado.EstadoJuego;
+import diego.juego.org.recursos.Recursos;
 
 public final class EscenaVictoriaFinal implements Escena {
 
@@ -27,6 +27,18 @@ public final class EscenaVictoriaFinal implements Escena {
 
     private final Rectangle btnMenu = new Rectangle(0, 0, 620f, 140f);
 
+    // ===== RECORD (panel debajo) =====
+    private boolean mostrandoRecord = false;
+    private boolean recordGuardado = false;
+    private final StringBuilder siglasInput = new StringBuilder();
+
+    private final Rectangle btnContinuarRecord = new Rectangle(0, 0, 760f, 150f);
+
+    // Panel record (solo estética / layout)
+    private final float recordPanelW = 980f;
+    private final float recordPanelH = 760f;
+    private float recordPanelX, recordPanelY;
+
     public EscenaVictoriaFinal(Recursos recursos, Viewport viewport, GestorEscenas gestorEscenas, int puntuacion) {
         this.recursos = recursos;
         this.viewport = viewport;
@@ -39,18 +51,67 @@ public final class EscenaVictoriaFinal implements Escena {
             btnMenu.width,
             btnMenu.height
         );
+
+        // Panel record centrado horizontal y colocado por debajo de los textos de victoria
+        recordPanelX = (Main.ANCHO_MUNDO - recordPanelW) / 2f;
+        recordPanelY = 220f; // empieza sobre el botón "volver al menú" (ajusta si quieres)
+
+        btnContinuarRecord.set(
+            (Main.ANCHO_MUNDO - btnContinuarRecord.width) / 2f,
+            recordPanelY + 40f, // antes 60f
+            btnContinuarRecord.width,
+            btnContinuarRecord.height
+        );
     }
 
     @Override
     public void alMostrar() {
-        // Si quieres: parar música o poner música de victoria
-        // recursos.reproducirMusicaVictoria();
+        // Si hay record y NO se pidieron siglas para esta puntuación todavía:
+        if (EstadoJuego.entraEnTop10(puntuacion)
+            && !EstadoJuego.yaSePidieronSiglasPara(puntuacion)) {
+
+            mostrandoRecord = true;
+            recordGuardado = false;
+            siglasInput.setLength(0);
+
+            try { Gdx.input.setOnscreenKeyboardVisible(true); } catch (Throwable ignored) {}
+        }
     }
 
     @Override
     public void actualizar(float delta) {
+
+        // ===== Si estamos pidiendo record, bloqueamos botón menú (para obligar a CONTINUAR) =====
+        if (mostrandoRecord) {
+            leerInputSiglas();
+
+            // Back/Escape: por si acaso, no salir mientras pide siglas
+            if (Gdx.input.isKeyJustPressed(Input.Keys.BACK) || Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
+                return;
+            }
+
+            if (!Gdx.input.justTouched()) return;
+
+            Vector3 v = new Vector3(Gdx.input.getX(), Gdx.input.getY(), 0);
+            viewport.unproject(v);
+
+            if (btnContinuarRecord.contains(v.x, v.y)
+                && siglasInput.length() == 3
+                && !recordGuardado) {
+
+                EstadoJuego.insertarTopScore(siglasInput.toString(), puntuacion);
+                EstadoJuego.marcarSiglasPedidasPara(puntuacion);
+
+                recordGuardado = true;
+                mostrandoRecord = false;
+
+                try { Gdx.input.setOnscreenKeyboardVisible(false); } catch (Throwable ignored) {}
+            }
+            return;
+        }
+
+        // ===== Lo que ya tenías =====
         if (Gdx.input.isKeyJustPressed(Input.Keys.BACK) || Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
-            EstadoJuego.resetRun();
             gestorEscenas.cambiarA(new EscenaMenu(recursos, viewport, gestorEscenas));
             return;
         }
@@ -61,18 +122,45 @@ public final class EscenaVictoriaFinal implements Escena {
         viewport.unproject(v);
 
         if (btnMenu.contains(v.x, v.y)) {
-            EstadoJuego.resetRun();
             gestorEscenas.cambiarA(new EscenaMenu(recursos, viewport, gestorEscenas));
         }
     }
 
+    private void leerInputSiglas() {
+        // Letras A-Z
+        for (int key = Input.Keys.A; key <= Input.Keys.Z; key++) {
+            if (Gdx.input.isKeyJustPressed(key)) {
+                meterChar((char) ('A' + (key - Input.Keys.A)));
+            }
+        }
+
+        // Números 0-9
+        for (int key = Input.Keys.NUM_0; key <= Input.Keys.NUM_9; key++) {
+            if (Gdx.input.isKeyJustPressed(key)) {
+                meterChar((char) ('0' + (key - Input.Keys.NUM_0)));
+            }
+        }
+
+        // Borrar
+        if (Gdx.input.isKeyJustPressed(Input.Keys.BACKSPACE)) {
+            if (siglasInput.length() > 0) siglasInput.deleteCharAt(siglasInput.length() - 1);
+        }
+    }
+
+    private void meterChar(char c) {
+        if (siglasInput.length() >= 3) return;
+        if (Character.isLetterOrDigit(c)) siglasInput.append(Character.toUpperCase(c));
+    }
+
     @Override
     public void dibujar(SpriteBatch batch) {
-        // Fondo
+
+        // ===== Fondo =====
         batch.setColor(0f, 0f, 0f, 0.85f);
         batch.draw(recursos.pixelBlanco, 0, 0, Main.ANCHO_MUNDO, Main.ALTO_MUNDO);
         batch.setColor(1f, 1f, 1f, 1f);
 
+        // ===== Tu victoria final ARRIBA (igual que antes) =====
         fuente.getData().setScale(6.0f);
         dibujarTextoCentrado(batch, recursos.textos.t("victory_title"), Main.ANCHO_MUNDO / 2f, Main.ALTO_MUNDO - 260f);
 
@@ -84,7 +172,74 @@ public final class EscenaVictoriaFinal implements Escena {
 
         fuente.getData().setScale(1.0f);
 
-        dibujarBoton(batch, btnMenu, recursos.textos.t("victory_back_menu"));
+        // Botón volver al menú (si hay record, lo dibujamos “apagado” para que no se use antes)
+        if (mostrandoRecord) {
+            batch.setColor(0.15f, 0.65f, 1f, 0.25f);
+            batch.draw(recursos.pixelBlanco, btnMenu.x, btnMenu.y, btnMenu.width, btnMenu.height);
+            batch.setColor(1f, 1f, 1f, 0.35f);
+            fuente.getData().setScale(2.6f);
+            dibujarTextoCentrado(batch, recursos.textos.t("victory_back_menu"), Main.ANCHO_MUNDO / 2f, btnMenu.y + 95f);
+            fuente.getData().setScale(1.0f);
+            batch.setColor(1f, 1f, 1f, 1f);
+        } else {
+            dibujarBoton(batch, btnMenu, recursos.textos.t("victory_back_menu"));
+        }
+
+        // ===== Panel de record DEBAJO (sin tapar la victoria) =====
+        if (mostrandoRecord) {
+            dibujarPanelRecord(batch);
+        }
+    }
+
+    private void dibujarPanelRecord(SpriteBatch batch) {
+        float cx = Main.ANCHO_MUNDO / 2f;
+
+        // Fondo panel (no pantalla completa)
+        batch.setColor(0f, 0f, 0f, 0.70f);
+        batch.draw(recursos.pixelBlanco, recordPanelX, recordPanelY, recordPanelW, recordPanelH);
+
+
+        batch.setColor(1f, 1f, 1f, 1f);
+
+        // Texto record
+        fuente.getData().setScale(5.6f);
+        dibujarTextoCentrado(batch, recursos.textos.t("record_title"), cx, recordPanelY + recordPanelH - 120f);
+
+        fuente.getData().setScale(2.6f);
+        dibujarTextoCentrado(batch,
+            recursos.textos.t("record_points", puntuacion),
+            cx,
+            recordPanelY + recordPanelH - 230f
+        );
+
+        fuente.getData().setScale(2.9f);
+        dibujarTextoCentrado(batch, recursos.textos.t("record_initials_label"), cx, recordPanelY + recordPanelH - 360f);
+
+        String shown = siglasInput.toString();
+        while (shown.length() < 3) shown += "_";
+
+        fuente.getData().setScale(4.6f);
+        dibujarTextoCentrado(batch, shown, cx, recordPanelY + recordPanelH - 430f);
+
+        fuente.getData().setScale(1.8f);
+        dibujarTextoCentrado(batch, recursos.textos.t("record_hint"), cx, recordPanelY + 240f);
+
+        // Botón continuar
+        boolean enabled = siglasInput.length() == 3;
+
+        if (enabled) batch.setColor(0.15f, 0.65f, 1f, 0.90f);
+        else batch.setColor(0.15f, 0.65f, 1f, 0.35f);
+
+        batch.draw(recursos.pixelBlanco,
+            btnContinuarRecord.x, btnContinuarRecord.y,
+            btnContinuarRecord.width, btnContinuarRecord.height);
+
+        batch.setColor(1f, 1f, 1f, 1f);
+
+        fuente.getData().setScale(2.8f);
+        dibujarTextoCentrado(batch, recursos.textos.t("record_continue"), cx, btnContinuarRecord.y + 95f);
+
+        fuente.getData().setScale(1.0f);
     }
 
     private void dibujarTextoCentrado(SpriteBatch batch, String texto, float centroX, float y) {
@@ -108,5 +263,9 @@ public final class EscenaVictoriaFinal implements Escena {
 
     @Override public void alRedimensionar(int ancho, int alto) { viewport.update(ancho, alto, true); }
     @Override public void alOcultar() {}
-    @Override public void liberar() { fuente.dispose(); }
+
+    @Override
+    public void liberar() {
+        fuente.dispose();
+    }
 }
