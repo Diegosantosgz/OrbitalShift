@@ -2,6 +2,7 @@ package diego.juego.org.escenas;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
+import com.badlogic.gdx.Input.TextInputListener;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
@@ -30,7 +31,12 @@ public final class EscenaVictoriaFinal implements Escena {
     // ===== RECORD (panel debajo) =====
     private boolean mostrandoRecord = false;
     private boolean recordGuardado = false;
+
+    // SIGLAS (se dibujan aquí)
     private final StringBuilder siglasInput = new StringBuilder();
+
+    // Para móvil (evita abrir el teclado mil veces)
+    private boolean pidiendoSiglasMovil = false;
 
     private final Rectangle btnContinuarRecord = new Rectangle(0, 0, 760f, 150f);
 
@@ -54,11 +60,11 @@ public final class EscenaVictoriaFinal implements Escena {
 
         // Panel record centrado horizontal y colocado por debajo de los textos de victoria
         recordPanelX = (Main.ANCHO_MUNDO - recordPanelW) / 2f;
-        recordPanelY = 220f; // empieza sobre el botón "volver al menú" (ajusta si quieres)
+        recordPanelY = 220f;
 
         btnContinuarRecord.set(
             (Main.ANCHO_MUNDO - btnContinuarRecord.width) / 2f,
-            recordPanelY + 40f, // antes 60f
+            recordPanelY + 40f,
             btnContinuarRecord.width,
             btnContinuarRecord.height
         );
@@ -66,7 +72,6 @@ public final class EscenaVictoriaFinal implements Escena {
 
     @Override
     public void alMostrar() {
-        // Si hay record y NO se pidieron siglas para esta puntuación todavía:
         if (EstadoJuego.entraEnTop10(puntuacion)
             && !EstadoJuego.yaSePidieronSiglasPara(puntuacion)) {
 
@@ -74,18 +79,53 @@ public final class EscenaVictoriaFinal implements Escena {
             recordGuardado = false;
             siglasInput.setLength(0);
 
-            try { Gdx.input.setOnscreenKeyboardVisible(true); } catch (Throwable ignored) {}
+            // IMPORTANTE: en móvil hay que usar getTextInput
+            pedirSiglasMovil();
         }
+    }
+
+    private void pedirSiglasMovil() {
+        if (pidiendoSiglasMovil) return;
+        pidiendoSiglasMovil = true;
+
+        // Abre el teclado del sistema (Android/iOS) y devuelve el texto aquí:
+        Gdx.input.getTextInput(new TextInputListener() {
+            @Override
+            public void input(String text) {
+                siglasInput.setLength(0);
+                siglasInput.append(limpiar3(text));
+                pidiendoSiglasMovil = false;
+            }
+
+            @Override
+            public void canceled() {
+                // Si cancela, dejamos vacío (o puedes poner "---" si prefieres)
+                pidiendoSiglasMovil = false;
+            }
+        }, recursos.textos.t("record_title"), "", recursos.textos.t("record_hint"));
+    }
+
+    private String limpiar3(String s) {
+        if (s == null) s = "";
+        StringBuilder out = new StringBuilder(3);
+        for (int i = 0; i < s.length() && out.length() < 3; i++) {
+            char c = s.charAt(i);
+            if (Character.isLetterOrDigit(c)) out.append(Character.toUpperCase(c));
+        }
+        while (out.length() < 3) out.append('-');
+        return out.toString();
     }
 
     @Override
     public void actualizar(float delta) {
 
-        // ===== Si estamos pidiendo record, bloqueamos botón menú (para obligar a CONTINUAR) =====
+        // ===== Si estamos pidiendo record, bloqueamos botón menú =====
         if (mostrandoRecord) {
+
+            // Desktop / teclado físico: sigue funcionando como antes
             leerInputSiglas();
 
-            // Back/Escape: por si acaso, no salir mientras pide siglas
+            // Back/Escape: no salir mientras pide siglas
             if (Gdx.input.isKeyJustPressed(Input.Keys.BACK) || Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
                 return;
             }
@@ -95,17 +135,21 @@ public final class EscenaVictoriaFinal implements Escena {
             Vector3 v = new Vector3(Gdx.input.getX(), Gdx.input.getY(), 0);
             viewport.unproject(v);
 
-            if (btnContinuarRecord.contains(v.x, v.y)
-                && siglasInput.length() == 3
-                && !recordGuardado) {
+            // Si pulsa continuar sin 3 letras, en móvil reabrimos teclado
+            if (btnContinuarRecord.contains(v.x, v.y)) {
 
-                EstadoJuego.insertarTopScore(siglasInput.toString(), puntuacion);
-                EstadoJuego.marcarSiglasPedidasPara(puntuacion);
+                if (siglasInput.length() != 3) {
+                    pedirSiglasMovil();
+                    return;
+                }
 
-                recordGuardado = true;
-                mostrandoRecord = false;
+                if (!recordGuardado) {
+                    EstadoJuego.insertarTopScore(siglasInput.toString(), puntuacion);
+                    EstadoJuego.marcarSiglasPedidasPara(puntuacion);
 
-                try { Gdx.input.setOnscreenKeyboardVisible(false); } catch (Throwable ignored) {}
+                    recordGuardado = true;
+                    mostrandoRecord = false;
+                }
             }
             return;
         }
@@ -127,6 +171,15 @@ public final class EscenaVictoriaFinal implements Escena {
     }
 
     private void leerInputSiglas() {
+        // Si ya tenemos 3 (por móvil), no sigas metiendo
+        if (siglasInput.length() >= 3) {
+            // permite backspace igualmente
+            if (Gdx.input.isKeyJustPressed(Input.Keys.BACKSPACE)) {
+                siglasInput.deleteCharAt(siglasInput.length() - 1);
+            }
+            return;
+        }
+
         // Letras A-Z
         for (int key = Input.Keys.A; key <= Input.Keys.Z; key++) {
             if (Gdx.input.isKeyJustPressed(key)) {
@@ -172,7 +225,7 @@ public final class EscenaVictoriaFinal implements Escena {
 
         fuente.getData().setScale(1.0f);
 
-        // Botón volver al menú (si hay record, lo dibujamos “apagado” para que no se use antes)
+        // Botón volver al menú (si hay record, lo dibujamos apagado)
         if (mostrandoRecord) {
             batch.setColor(0.15f, 0.65f, 1f, 0.25f);
             batch.draw(recursos.pixelBlanco, btnMenu.x, btnMenu.y, btnMenu.width, btnMenu.height);
@@ -185,7 +238,7 @@ public final class EscenaVictoriaFinal implements Escena {
             dibujarBoton(batch, btnMenu, recursos.textos.t("victory_back_menu"));
         }
 
-        // ===== Panel de record DEBAJO (sin tapar la victoria) =====
+        // ===== Panel record debajo =====
         if (mostrandoRecord) {
             dibujarPanelRecord(batch);
         }
@@ -194,10 +247,9 @@ public final class EscenaVictoriaFinal implements Escena {
     private void dibujarPanelRecord(SpriteBatch batch) {
         float cx = Main.ANCHO_MUNDO / 2f;
 
-        // Fondo panel (no pantalla completa)
+        // Fondo panel
         batch.setColor(0f, 0f, 0f, 0.70f);
         batch.draw(recursos.pixelBlanco, recordPanelX, recordPanelY, recordPanelW, recordPanelH);
-
 
         batch.setColor(1f, 1f, 1f, 1f);
 
@@ -218,8 +270,9 @@ public final class EscenaVictoriaFinal implements Escena {
         String shown = siglasInput.toString();
         while (shown.length() < 3) shown += "_";
 
+        // >>> SUBIDO UN PELÍN (antes -430f)
         fuente.getData().setScale(4.6f);
-        dibujarTextoCentrado(batch, shown, cx, recordPanelY + recordPanelH - 430f);
+        dibujarTextoCentrado(batch, shown, cx, recordPanelY + recordPanelH - 410f);
 
         fuente.getData().setScale(1.8f);
         dibujarTextoCentrado(batch, recursos.textos.t("record_hint"), cx, recordPanelY + 240f);
