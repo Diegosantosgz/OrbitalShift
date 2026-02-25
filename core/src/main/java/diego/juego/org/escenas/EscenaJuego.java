@@ -788,11 +788,13 @@ public class EscenaJuego implements Escena {
                         bossDerrotado = true;
                         balasBoss.clear();
 
+                        puntuacion += 1000;
+                        activarScorePop(); // para el pop up del marcador
+
                         // Inicia secuencia lenta
                         bossMuriendo = true;
                         bossDeathTimer = bossDeathDuration;
                         bossDeathSpawnTimer = 0f;
-
 
                         return;
                     }
