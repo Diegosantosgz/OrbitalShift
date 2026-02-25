@@ -359,9 +359,11 @@ public class EscenaJuego implements Escena {
             }
         }
 
-        // BACK/ESC -> volver al menú
-        if (Gdx.input.isKeyJustPressed(Input.Keys.BACK) || Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
-            gestorEscenas.cambiarA(new EscenaMenu(recursos, viewport, gestorEscenas));
+        // BACK / ESC -> alternar pausa
+        if (Gdx.input.isKeyJustPressed(Input.Keys.BACK) ||
+            Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
+
+            pausado = !pausado;
             return;
         }
 

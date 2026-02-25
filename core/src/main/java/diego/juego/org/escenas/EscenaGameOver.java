@@ -68,8 +68,12 @@ public class EscenaGameOver implements Escena {
 
     @Override
     public void actualizar(float delta) {
+
+        // BACK / ESC -> volver al menú (en vez de cerrar el juego)
         if (Gdx.input.isKeyJustPressed(Input.Keys.BACK) || Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
-            Gdx.app.exit();
+            EstadoJuego.resetFlagsGameOver();
+            EstadoJuego.nivelActual = 1;
+            gestorEscenas.cambiarA(new EscenaMenu(recursos, viewport, gestorEscenas));
             return;
         }
 
@@ -85,8 +89,11 @@ public class EscenaGameOver implements Escena {
             return;
         }
 
+        // SALIR -> volver al menú (en vez de Gdx.app.exit())
         if (btnSalir.contains(v.x, v.y)) {
-            Gdx.app.exit();
+            EstadoJuego.resetFlagsGameOver();
+            EstadoJuego.nivelActual = 1;
+            gestorEscenas.cambiarA(new EscenaMenu(recursos, viewport, gestorEscenas));
         }
     }
 
