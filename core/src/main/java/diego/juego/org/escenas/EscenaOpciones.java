@@ -21,7 +21,9 @@ public class EscenaOpciones implements Escena {
     private final Viewport viewport;
     private final GestorEscenas gestorEscenas;
 
-    private final BitmapFont fuente;
+    private final BitmapFont fuenteTitulo;
+    private final BitmapFont fuenteBoton;
+    private final BitmapFont fuenteNormal;
     private final GlyphLayout layout;
 
     private final Rectangle btnToggleMultitouch;
@@ -29,7 +31,6 @@ public class EscenaOpciones implements Escena {
     private final Rectangle btnToggleMusica;
     private final Rectangle btnToggleSfx;
 
-    // Idiomas
     private final Rectangle btnIdiomaES;
     private final Rectangle btnIdiomaEN;
 
@@ -38,7 +39,9 @@ public class EscenaOpciones implements Escena {
         this.viewport = viewport;
         this.gestorEscenas = gestorEscenas;
 
-        this.fuente = new BitmapFont();
+        this.fuenteTitulo = recursos.fuentes.getTitulo();
+        this.fuenteBoton = recursos.fuentes.getBoton();
+        this.fuenteNormal = recursos.fuentes.getNormal();
         this.layout = new GlyphLayout();
 
         btnToggleMultitouch = new Rectangle((Main.ANCHO_MUNDO - 720f) / 2f, 900f, 720f, 120f);
@@ -46,7 +49,6 @@ public class EscenaOpciones implements Escena {
         btnToggleMusica     = new Rectangle((Main.ANCHO_MUNDO - 720f) / 2f, 540f, 720f, 120f);
         btnToggleSfx        = new Rectangle((Main.ANCHO_MUNDO - 720f) / 2f, 360f, 720f, 120f);
 
-        // Botones idioma (debajo de SFX, uno al lado de otro)
         float totalW = 720f;
         float gap = 30f;
         float eachW = (totalW - gap) / 2f;
@@ -57,7 +59,8 @@ public class EscenaOpciones implements Escena {
         btnIdiomaEN = new Rectangle(x0 + eachW + gap, yIdiomas, eachW, 120f);
     }
 
-    @Override public void alMostrar() { }
+    @Override
+    public void alMostrar() { }
 
     @Override
     public void actualizar(float delta) {
@@ -90,10 +93,7 @@ public class EscenaOpciones implements Escena {
 
         if (btnToggleMusica.contains(x, y)) {
             EstadoJuego.musicaActivada = !EstadoJuego.musicaActivada;
-
-            // Aplica a la música que toque ahora mismo (menú o nivel actual)
             recursos.reproducirMusicaParaNivel(EstadoJuego.nivelActual);
-
             return;
         }
 
@@ -102,7 +102,6 @@ public class EscenaOpciones implements Escena {
             return;
         }
 
-        // Idioma
         if (btnIdiomaES.contains(x, y)) {
             EstadoJuego.idiomaActual = EstadoJuego.Idioma.ES;
             recursos.textos.recargar();
@@ -127,16 +126,10 @@ public class EscenaOpciones implements Escena {
         String on  = recursos.textos.t("common_on");
         String off = recursos.textos.t("common_off");
 
-        // Título
-        fuente.getData().setScale(6.0f);
-        dibujarTextoCentrado(batch, recursos.textos.t("opt_title"), Main.ANCHO_MUNDO / 2f, 1450f);
+        dibujarTextoCentrado(batch, fuenteTitulo, recursos.textos.t("opt_title"), Main.ANCHO_MUNDO / 2f, 1450f);
 
-        // Subtítulo
-        fuente.getData().setScale(2.4f);
-        dibujarTextoCentrado(batch, recursos.textos.t("opt_multitouch_desc"), Main.ANCHO_MUNDO / 2f, 1200f);
+        dibujarTextoCentrado(batch, fuenteNormal, recursos.textos.t("opt_multitouch_desc"), Main.ANCHO_MUNDO / 2f, 1200f);
 
-        // Toggles
-        fuente.getData().setScale(2.6f);
         dibujarBotonToggle(batch, btnToggleMultitouch,
             recursos.textos.t("opt_multitouch") + ": " + (EstadoJuego.multitouchActivado ? on : off),
             EstadoJuego.multitouchActivado
@@ -157,18 +150,12 @@ public class EscenaOpciones implements Escena {
             EstadoJuego.sfxActivados
         );
 
-        // Idioma
-        fuente.getData().setScale(2.0f);
-        dibujarTextoCentrado(batch, recursos.textos.t("opt_language"), Main.ANCHO_MUNDO / 2f, 330f);
+        dibujarTextoCentrado(batch, fuenteNormal, recursos.textos.t("opt_language"), Main.ANCHO_MUNDO / 2f, 330f);
 
         dibujarBotonIdioma(batch, btnIdiomaES, "ES", EstadoJuego.idiomaActual == EstadoJuego.Idioma.ES);
         dibujarBotonIdioma(batch, btnIdiomaEN, "EN", EstadoJuego.idiomaActual == EstadoJuego.Idioma.EN);
 
-        // Back
-        fuente.getData().setScale(1.8f);
-        dibujarTextoCentrado(batch, recursos.textos.t("opt_back"), Main.ANCHO_MUNDO / 2f, 140f);
-
-        fuente.getData().setScale(1.0f);
+        dibujarTextoCentrado(batch, fuenteNormal, recursos.textos.t("opt_back"), Main.ANCHO_MUNDO / 2f, 140f);
     }
 
     private void dibujarBotonToggle(SpriteBatch batch, Rectangle r, String texto, boolean activado) {
@@ -182,13 +169,7 @@ public class EscenaOpciones implements Escena {
         batch.draw(recursos.pixelBlanco, r.x, r.y + r.height - 6f, r.width, 6f);
 
         batch.setColor(1f, 1f, 1f, 1f);
-        dibujarTextoCentrado(batch, texto, r.x + r.width / 2f, r.y + r.height / 2f + 22f);
-    }
-
-    private void dibujarTextoCentrado(SpriteBatch batch, String texto, float centroX, float y) {
-        layout.setText(fuente, texto);
-        float x = centroX - layout.width / 2f;
-        fuente.draw(batch, layout, x, y);
+        dibujarTextoCentrado(batch, fuenteBoton, texto, r.x + r.width / 2f, r.y + r.height / 2f + 22f);
     }
 
     private void dibujarBotonIdioma(SpriteBatch batch, Rectangle r, String texto, boolean seleccionado) {
@@ -202,14 +183,24 @@ public class EscenaOpciones implements Escena {
         batch.draw(recursos.pixelBlanco, r.x, r.y + r.height - 6f, r.width, 6f);
 
         batch.setColor(1f, 1f, 1f, 1f);
-        dibujarTextoCentrado(batch, texto, r.x + r.width / 2f, r.y + r.height / 2f + 22f);
+        dibujarTextoCentrado(batch, fuenteBoton, texto, r.x + r.width / 2f, r.y + r.height / 2f + 22f);
     }
 
-    @Override public void alRedimensionar(int ancho, int alto) { viewport.update(ancho,alto, true); }
+    private void dibujarTextoCentrado(SpriteBatch batch, BitmapFont font, String texto, float centroX, float y) {
+        layout.setText(font, texto);
+        float x = centroX - layout.width / 2f;
+        font.draw(batch, layout, x, y);
+    }
+
+    @Override
+    public void alRedimensionar(int ancho, int alto) {
+        viewport.update(ancho, alto, true);
+    }
+
     @Override public void alOcultar() { }
 
     @Override
     public void liberar() {
-        fuente.dispose();
+        // No liberar fuentes aquí (son compartidas y las libera Recursos.liberar()).
     }
 }

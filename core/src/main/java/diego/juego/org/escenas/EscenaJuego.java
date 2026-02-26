@@ -66,12 +66,7 @@ public class EscenaJuego implements Escena {
     private boolean pausado = false;
 
     // Botón hamburguesa debajo de la puntuación (arriba derecha)
-    private final Rectangle btnMenuPausa = new Rectangle(
-        Main.ANCHO_MUNDO - 120f,   // X
-        Main.ALTO_MUNDO - 160f,    // Y (ajústalo para que quede debajo del score)
-        80f,                       // W
-        60f                        // H
-    );
+    private final Rectangle btnMenuPausa = new Rectangle();
 
     // Panel tipo Game Over
     private final float pausaPanelW = 820f;
@@ -95,7 +90,9 @@ public class EscenaJuego implements Escena {
     private final ControlTouchpad controlPad = new ControlTouchpad(155f, 60f);
 
     // UI / TEXTO
-    private final BitmapFont fuente;
+    private final BitmapFont fuenteTitulo;
+    private final BitmapFont fuenteNormal;
+    private final BitmapFont fuenteBoton;
     private final GlyphLayout layout;
 
     // JUGADOR
@@ -147,7 +144,7 @@ public class EscenaJuego implements Escena {
     // SCORE POP
     private float timerScorePop = 0f;
     private static final float SCORE_POP_DURATION = 0.18f;
-    private float escalaScoreBase = 3.2f;
+    private float escalaScoreBase = 1.7f;
 
     // GRAVEDAD / POZO
     private float timerSpawnGravedad = 0f;
@@ -222,7 +219,9 @@ public class EscenaJuego implements Escena {
         this.viewport = viewport;
         this.gestorEscenas = gestorEscenas;
 
-        this.fuente = new BitmapFont();
+        this.fuenteTitulo = recursos.fuentes.getTituloPeque();   // para "PAUSA"
+        this.fuenteNormal = recursos.fuentes.getNormal();   // textos HUD si quieres
+        this.fuenteBoton  = recursos.fuentes.getBoton();    // botones + score
         this.layout = new GlyphLayout();
 
         inicializar();
@@ -928,10 +927,10 @@ public class EscenaJuego implements Escena {
 
 
 
-    private void dibujarTextoCentrado(SpriteBatch batch, String texto, float centroX, float y) {
-        layout.setText(fuente, texto);
+    private void dibujarTextoCentrado(SpriteBatch batch, BitmapFont font, String texto, float centroX, float y) {
+        layout.setText(font, texto);
         float x = centroX - layout.width / 2f;
-        fuente.draw(batch, layout, x, y);
+        font.draw(batch, layout, x, y);
     }
 
     private void dibujarBotonRect(SpriteBatch batch, Rectangle r, String texto, boolean primario) {
@@ -945,14 +944,38 @@ public class EscenaJuego implements Escena {
         batch.draw(recursos.pixelBlanco, r.x, r.y + r.height - 6f, r.width, 6f);
 
         batch.setColor(1f, 1f, 1f, 1f);
-        fuente.getData().setScale(2.2f);
 
-        layout.setText(fuente, texto);
-        float tx = r.x + (r.width - layout.width) / 2f;
-        float ty = r.y + (r.height / 2f) + (layout.height / 2f);
-        fuente.draw(batch, layout, tx, ty);
+        dibujarTextoCentradoAjustado(
+            batch,
+            fuenteBoton,
+            texto,
+            r.x + r.width / 2f,
+            r.y + r.height / 2f + 18f,
+            r.width * 0.88f
+        );
+    }
+    private void dibujarTextoCentradoAjustado(
+        SpriteBatch batch,
+        BitmapFont font,
+        String texto,
+        float centroX,
+        float y,
+        float maxAncho
+    ) {
+        layout.setText(font, texto);
 
-        fuente.getData().setScale(1.0f);
+        float escala = 1f;
+        if (layout.width > maxAncho) {
+            escala = maxAncho / layout.width;
+        }
+
+        font.getData().setScale(escala);
+        layout.setText(font, texto);
+
+        float x = centroX - layout.width / 2f;
+        font.draw(batch, layout, x, y);
+
+        font.getData().setScale(1f);
     }
 
 
@@ -1084,10 +1107,11 @@ public class EscenaJuego implements Escena {
         // HUD
         dibujarVidas(batch);
         dibujarPuntuacion(batch);
+        dibujarBotonHamburguesa(batch);
         dibujarBarraAntiGravedad(batch);
         dibujarBarraVidaBoss(batch);
 
-        dibujarBotonHamburguesa(batch);
+
 
 
         if (pausado) {
@@ -1103,23 +1127,28 @@ public class EscenaJuego implements Escena {
     }
 
     private void dibujarBotonHamburguesa(SpriteBatch batch) {
-        // Fondo semitransparente
-        batch.setColor(0f, 0f, 0f, 0.25f);
+
+        // Fondo
+        batch.setColor(0f, 0f, 0f, 0.22f);
         batch.draw(recursos.pixelBlanco, btnMenuPausa.x, btnMenuPausa.y, btnMenuPausa.width, btnMenuPausa.height);
 
-        // 3 líneas blancas
-        batch.setColor(1f, 1f, 1f, 0.80f);
+        // Líneas (relativas al rect)
+        batch.setColor(1f, 1f, 1f, 0.90f);
 
-        float padX = 12f;
-        float lineH = 6f;
-        float gap = 10f;
+        float padX = btnMenuPausa.width * 0.22f;
+        float padY = btnMenuPausa.height * 0.22f;
 
         float x = btnMenuPausa.x + padX;
         float w = btnMenuPausa.width - padX * 2f;
 
-        float y1 = btnMenuPausa.y + btnMenuPausa.height - 16f;
-        float y2 = y1 - (lineH + gap);
-        float y3 = y2 - (lineH + gap);
+        float lineH = Math.max(2f, btnMenuPausa.height * 0.10f);
+        float gap   = btnMenuPausa.height * 0.14f;
+
+        float top = btnMenuPausa.y + btnMenuPausa.height - padY;
+
+        float y1 = top - lineH;
+        float y2 = y1 - gap - lineH;
+        float y3 = y2 - gap - lineH;
 
         batch.draw(recursos.pixelBlanco, x, y1, w, lineH);
         batch.draw(recursos.pixelBlanco, x, y2, w, lineH);
@@ -1140,10 +1169,14 @@ public class EscenaJuego implements Escena {
         batch.draw(recursos.pixelBlanco, pausaPanelX, pausaPanelY + pausaPanelH - 10f, pausaPanelW, 10f);
 
         batch.setColor(1f, 1f, 1f, 1f);
-
-        fuente.getData().setScale(5.5f);
-        dibujarTextoCentrado(batch, recursos.textos.t("pause_title"), Main.ANCHO_MUNDO / 2f, pausaPanelY + pausaPanelH - 140f);
-        fuente.getData().setScale(1.0f);
+        dibujarTextoCentradoAjustado(
+            batch,
+            fuenteTitulo,
+            recursos.textos.t("pause_title"),
+            Main.ANCHO_MUNDO / 2f,
+            pausaPanelY + pausaPanelH - 140f,
+            pausaPanelW * 0.90f
+        );
 
         dibujarBotonRect(batch, btnReanudar, recursos.textos.t("pause_resume"), true);
         dibujarBotonRect(batch, btnVolverMenu, recursos.textos.t("pause_menu"), false);
@@ -1190,28 +1223,71 @@ public class EscenaJuego implements Escena {
     }
 
     private void dibujarPuntuacion(SpriteBatch batch) {
+
+        // ===== Ajustes HUD =====
+        float marginRight = 22f;
+        float marginTop   = 22f;
+
+        float iconSize = 42f;      // tamaño estrella
+        float gapIconText = 10f;
+
+        float btnW = 90f;
+        float btnH = 96f;
+        float gapScoreToBtn = 10f;
+
+        // ===== Pop suave del score (solo escala texto) =====
         float extra = 0f;
         if (timerScorePop > 0f) {
             float t = timerScorePop / SCORE_POP_DURATION;
-            extra = (float) Math.sin(t * Math.PI) * 0.9f;
+            extra = (float) Math.sin(t * Math.PI) * 0.18f;
         }
-        fuente.getData().setScale(escalaScoreBase + extra);
 
         String text = String.valueOf(puntuacion);
-        layout.setText(fuente, text);
 
-        float padding = 20f;
-        float iconSize = 64f;
+        // 1) Medimos texto a escala 1
+        fuenteBoton.getData().setScale(1f);
+        layout.setText(fuenteBoton, text);
 
-        float totalW = iconSize + padding + layout.width;
+        // 2) Escalamos para que el número tenga alto parecido al icono
+        float targetTextH = iconSize * 0.82f;
+        float scaleToMatch = targetTextH / Math.max(1f, layout.height);
 
-        float x = Main.ANCHO_MUNDO - totalW - 30f;
-        float y = Main.ALTO_MUNDO - 40f;
+        float scale = scaleToMatch + extra;
+        fuenteBoton.getData().setScale(scale);
 
-        batch.draw(recursos.iconoPuntuacion, x, y - iconSize + 10f, iconSize, iconSize);
-        fuente.draw(batch, layout, x + iconSize + padding, y);
+        // Recalcular layout ya escalado
+        layout.setText(fuenteBoton, text);
 
-        fuente.getData().setScale(1.0f);
+        // ===== Bloque score arriba-derecha =====
+        float blockW = iconSize + gapIconText + layout.width;
+        float blockH = Math.max(iconSize, layout.height);
+
+        float blockRight = Main.ANCHO_MUNDO - marginRight;
+        float blockTop   = Main.ALTO_MUNDO - marginTop;
+
+        float blockX = blockRight - blockW;
+        float blockYBottom = blockTop - blockH;
+
+        float centerY = blockYBottom + blockH / 2f;
+
+        float iconX = blockX;
+        float iconY = centerY - iconSize / 2f;
+
+        float textX = blockX + iconSize + gapIconText;
+        float textY = centerY + layout.height / 2f;
+
+        batch.draw(recursos.iconoPuntuacion, iconX, iconY, iconSize, iconSize);
+        fuenteBoton.draw(batch, layout, textX, textY);
+
+        // ===== Botón pausa ESTÁTICO: anclado a la derecha =====
+        float btnRightMargin = 14f; // <- más a la derecha (menos margen)
+        float btnX = Main.ANCHO_MUNDO - btnRightMargin - btnW;
+        float btnY = blockYBottom - gapScoreToBtn - btnH;
+
+        btnMenuPausa.set(btnX, btnY, btnW, btnH);
+
+        // Reset
+        fuenteBoton.getData().setScale(1f);
     }
     private void dibujarBarraAntiGravedad(SpriteBatch batch) {
         if (!antiGravedadActiva) return;
@@ -1480,7 +1556,7 @@ public class EscenaJuego implements Escena {
 
     @Override
     public void liberar() {
-        fuente.dispose();
+
 
     }
 }

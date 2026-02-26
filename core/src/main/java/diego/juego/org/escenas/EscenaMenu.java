@@ -27,11 +27,10 @@ public class EscenaMenu implements Escena {
     // UI
     private Rectangle btnJugar, btnOpciones, btnCreditos, btnAyuda, btnRecords, btnSalir;
 
-
-
-
-    // Texto
-    private final BitmapFont fuente;
+    // Texto (fuentes compartidas)
+    private final BitmapFont fuenteTitulo;
+    private final BitmapFont fuenteSubtitulo;
+    private final BitmapFont fuenteBoton;
     private final GlyphLayout layout;
 
     // Parallax
@@ -48,7 +47,11 @@ public class EscenaMenu implements Escena {
         this.viewport = viewport;
         this.gestorEscenas = gestorEscenas;
 
-        this.fuente = new BitmapFont();
+        // Usamos las fuentes del gestor (Orbitron)
+        this.fuenteTitulo = recursos.fuentes.getTitulo();
+        this.fuenteSubtitulo = recursos.fuentes.getNormal();
+        this.fuenteBoton = recursos.fuentes.getBoton();
+
         this.layout = new GlyphLayout();
 
         crearBotones();
@@ -58,12 +61,12 @@ public class EscenaMenu implements Escena {
         float x0 = (Main.ANCHO_MUNDO - anchoBoton) / 2f;
         float startY = 1080f;
 
-        btnJugar    = new Rectangle(x0, startY,                       anchoBoton, altoBoton);
-        btnOpciones = new Rectangle(x0, startY - (altoBoton+separacion) * 1f, anchoBoton, altoBoton);
-        btnCreditos = new Rectangle(x0, startY - (altoBoton+separacion) * 2f, anchoBoton, altoBoton);
-        btnAyuda    = new Rectangle(x0, startY - (altoBoton+separacion) * 3f, anchoBoton, altoBoton);
-        btnRecords  = new Rectangle(x0, startY - (altoBoton+separacion) * 4f, anchoBoton, altoBoton);
-        btnSalir    = new Rectangle(x0, startY - (altoBoton+separacion) * 5f, anchoBoton, altoBoton);
+        btnJugar    = new Rectangle(x0, startY,                            anchoBoton, altoBoton);
+        btnOpciones = new Rectangle(x0, startY - (altoBoton + separacion) * 1f, anchoBoton, altoBoton);
+        btnCreditos = new Rectangle(x0, startY - (altoBoton + separacion) * 2f, anchoBoton, altoBoton);
+        btnAyuda    = new Rectangle(x0, startY - (altoBoton + separacion) * 3f, anchoBoton, altoBoton);
+        btnRecords  = new Rectangle(x0, startY - (altoBoton + separacion) * 4f, anchoBoton, altoBoton);
+        btnSalir    = new Rectangle(x0, startY - (altoBoton + separacion) * 5f, anchoBoton, altoBoton);
     }
 
     @Override
@@ -71,7 +74,6 @@ public class EscenaMenu implements Escena {
         EstadoJuego.nivelActual = 1;
         recursos.reproducirMusicaParaNivel(1);
     }
-
 
     @Override
     public void actualizar(float delta) {
@@ -90,7 +92,6 @@ public class EscenaMenu implements Escena {
     }
 
     private void procesarEntrada() {
-        // BACK / ESC -> salir del juego desde el menú
         if (Gdx.input.isKeyJustPressed(Input.Keys.BACK) || Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
             Gdx.app.exit();
             return;
@@ -100,6 +101,7 @@ public class EscenaMenu implements Escena {
 
         Vector3 v = new Vector3(Gdx.input.getX(), Gdx.input.getY(), 0);
         viewport.unproject(v);
+
         float x = v.x;
         float y = v.y;
 
@@ -123,11 +125,11 @@ public class EscenaMenu implements Escena {
             gestorEscenas.cambiarA(new EscenaAyuda(recursos, viewport, gestorEscenas));
             return;
         }
+
         if (btnRecords.contains(x, y)) {
             gestorEscenas.cambiarA(new EscenaRecords(recursos, viewport, gestorEscenas));
             return;
         }
-
 
         if (btnSalir.contains(x, y)) {
             Gdx.app.exit();
@@ -138,34 +140,32 @@ public class EscenaMenu implements Escena {
     public void dibujar(SpriteBatch batch) {
         dibujarParallax(batch);
 
-        // oscurecer un poco encima para que el texto se vea bien
         batch.setColor(0f, 0f, 0f, 0.55f);
         batch.draw(recursos.pixelBlanco, 0, 0, Main.ANCHO_MUNDO, Main.ALTO_MUNDO);
         batch.setColor(1f, 1f, 1f, 1f);
 
         // Título
-        fuente.getData().setScale(7.0f);
-        dibujarTextoCentrado(batch, recursos.textos.t("menu_title"), Main.ANCHO_MUNDO / 2f, 1520f);
+
+        fuenteTitulo.getData().setScale(0.70f); // <- prueba 0.70 / 0.65 / 0.60
+        dibujarTextoCentrado(batch, fuenteTitulo, recursos.textos.t("menu_title"), Main.ANCHO_MUNDO / 2f, 1520f);
+        fuenteTitulo.getData().setScale(1f);
 
         // Récord
-        fuente.getData().setScale(2.2f);
-        dibujarTextoCentrado(batch,
+        dibujarTextoCentrado(
+            batch,
+            fuenteSubtitulo,
             recursos.textos.t("menu_record", EstadoJuego.getSiglas(0), EstadoJuego.getScore(0)),
             Main.ANCHO_MUNDO / 2f,
             1400f
         );
 
         // Botones
-        fuente.getData().setScale(2.2f);
-        dibujarBoton(batch, btnJugar,    recursos.textos.t("menu_play"));
-        dibujarBoton(batch, btnOpciones, recursos.textos.t("menu_options"));
-        dibujarBoton(batch, btnCreditos, recursos.textos.t("menu_credits"));
-        dibujarBoton(batch, btnRecords,  recursos.textos.t("menu_records"));
-        dibujarBoton(batch, btnAyuda,    recursos.textos.t("menu_help"));
-        dibujarBoton(batch, btnSalir,    recursos.textos.t("menu_exit"));
-
-
-        fuente.getData().setScale(1.0f);
+        dibujarBoton(batch, btnJugar,    recursos.textos.t("menu_play"), fuenteBoton);
+        dibujarBoton(batch, btnOpciones, recursos.textos.t("menu_options"), fuenteBoton);
+        dibujarBoton(batch, btnCreditos, recursos.textos.t("menu_credits"), fuenteBoton);
+        dibujarBoton(batch, btnRecords,  recursos.textos.t("menu_records"), fuenteBoton);
+        dibujarBoton(batch, btnAyuda,    recursos.textos.t("menu_help"), fuenteBoton);
+        dibujarBoton(batch, btnSalir,    recursos.textos.t("menu_exit"), fuenteBoton);
     }
 
     private void dibujarParallax(SpriteBatch batch) {
@@ -180,27 +180,28 @@ public class EscenaMenu implements Escena {
         batch.draw(tex, 0, offsetY + Main.ALTO_MUNDO, Main.ANCHO_MUNDO, Main.ALTO_MUNDO);
     }
 
-    private void dibujarBoton(SpriteBatch batch, Rectangle r, String texto) {
-        // fondo botón
+    private void dibujarBoton(SpriteBatch batch, Rectangle r, String texto, BitmapFont font) {
         batch.setColor(0.15f, 0.65f, 1f, 0.85f);
         batch.draw(recursos.pixelBlanco, r.x, r.y, r.width, r.height);
 
-        // líneas decorativas
         batch.setColor(0f, 0f, 0f, 0.25f);
         batch.draw(recursos.pixelBlanco, r.x, r.y, r.width, 6f);
         batch.draw(recursos.pixelBlanco, r.x, r.y + r.height - 6f, r.width, 6f);
 
         batch.setColor(1f, 1f, 1f, 1f);
-        dibujarTextoCentrado(batch, texto, r.x + r.width / 2f, r.y + r.height / 2f + 22f);
+        dibujarTextoCentrado(batch, font, texto, r.x + r.width / 2f, r.y + r.height / 2f + 22f);
     }
 
-    private void dibujarTextoCentrado(SpriteBatch batch, String texto, float centroX, float y) {
-        layout.setText(fuente, texto);
+    private void dibujarTextoCentrado(SpriteBatch batch, BitmapFont font, String texto, float centroX, float y) {
+        layout.setText(font, texto);
         float x = centroX - layout.width / 2f;
-        fuente.draw(batch, layout, x, y);
+        font.draw(batch, layout, x, y);
     }
 
-    @Override public void alRedimensionar(int ancho, int alto) { viewport.update(ancho,alto, true); }
+    @Override
+    public void alRedimensionar(int ancho, int alto) {
+        viewport.update(ancho, alto, true);
+    }
 
     @Override
     public void alOcultar() {
@@ -209,8 +210,6 @@ public class EscenaMenu implements Escena {
 
     @Override
     public void liberar() {
-        // Ojo: no liberamos recursos compartidos aquí (eso lo hace Main -> Recursos.liberar()).
-        // Liberamos la fuente propia de esta escena.
-        fuente.dispose();
+        // No liberamos fuentes aquí porque son compartidas (las libera Recursos.liberar()).
     }
 }

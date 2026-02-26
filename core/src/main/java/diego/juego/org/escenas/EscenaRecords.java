@@ -21,8 +21,10 @@ public class EscenaRecords implements Escena {
     private final Viewport viewport;
     private final GestorEscenas gestor;
 
-    private final BitmapFont fuente = new BitmapFont();
-    private final GlyphLayout layout = new GlyphLayout();
+    private final BitmapFont fuenteTitulo;
+    private final BitmapFont fuenteLista;
+    private final BitmapFont fuenteBoton;
+    private final GlyphLayout layout;
 
     private final Rectangle btnVolver;
     private final Rectangle btnReset;
@@ -31,6 +33,11 @@ public class EscenaRecords implements Escena {
         this.recursos = recursos;
         this.viewport = viewport;
         this.gestor = gestor;
+
+        this.fuenteTitulo = recursos.fuentes.getTitulo();
+        this.fuenteLista = recursos.fuentes.getNormal();
+        this.fuenteBoton = recursos.fuentes.getBoton();
+        this.layout = new GlyphLayout();
 
         float bw = 520f, bh = 110f;
         btnVolver = new Rectangle((Main.ANCHO_MUNDO - bw) / 2f, 90f, bw, bh);
@@ -64,30 +71,23 @@ public class EscenaRecords implements Escena {
 
     @Override
     public void dibujar(SpriteBatch batch) {
-        // fondo oscurecido
         batch.setColor(0f, 0f, 0f, 0.70f);
         batch.draw(recursos.pixelBlanco, 0, 0, Main.ANCHO_MUNDO, Main.ALTO_MUNDO);
         batch.setColor(1f, 1f, 1f, 1f);
 
-        // título
-        fuente.getData().setScale(6.0f);
-        dibujarCentrado(batch, recursos.textos.t("records_title"), 1500f);
+        dibujarCentrado(batch, fuenteTitulo, recursos.textos.t("records_title"), 1500f);
 
-        // lista top 10 (INICIALES + SCORE) -> esto no necesita traducción
-        fuente.getData().setScale(3.0f);
         float y = 1300f;
         float step = 92f;
+
         for (int i = 0; i < 10; i++) {
             String linea = (i + 1) + ".  " + EstadoJuego.getSiglas(i) + "   " + EstadoJuego.getScore(i);
-            dibujarCentrado(batch, linea, y);
+            dibujarCentrado(batch, fuenteLista, linea, y);
             y -= step;
         }
 
-        // botones
         dibujarBoton(batch, btnReset,  recursos.textos.t("records_reset"), false);
         dibujarBoton(batch, btnVolver, recursos.textos.t("records_back"), true);
-
-        fuente.getData().setScale(1.0f);
     }
 
     private void dibujarBoton(SpriteBatch batch, Rectangle r, String texto, boolean primario) {
@@ -101,24 +101,52 @@ public class EscenaRecords implements Escena {
         batch.draw(recursos.pixelBlanco, r.x, r.y + r.height - 6f, r.width, 6f);
 
         batch.setColor(1f, 1f, 1f, 1f);
-        fuente.getData().setScale(2.4f);
-        dibujarCentradoEnRect(batch, texto, r);
-        fuente.getData().setScale(1.0f);
+
+        dibujarTextoCentradoAjustado(
+            batch,
+            fuenteBoton,
+            texto,
+            r.x + r.width / 2f,
+            r.y + r.height / 2f + 18f,
+            r.width * 0.88f
+        );
     }
 
-    private void dibujarCentrado(SpriteBatch batch, String txt, float y) {
-        layout.setText(fuente, txt);
-        fuente.draw(batch, layout, (Main.ANCHO_MUNDO - layout.width) / 2f, y);
+    private void dibujarCentrado(SpriteBatch batch, BitmapFont font, String txt, float y) {
+        layout.setText(font, txt);
+        float x = (Main.ANCHO_MUNDO - layout.width) / 2f;
+        font.draw(batch, layout, x, y);
     }
 
-    private void dibujarCentradoEnRect(SpriteBatch batch, String txt, Rectangle r) {
-        layout.setText(fuente, txt);
-        float x = r.x + (r.width - layout.width) / 2f;
-        float y = r.y + (r.height / 2f) + (layout.height / 2f);
-        fuente.draw(batch, layout, x, y);
+    private void dibujarTextoCentradoAjustado(
+        SpriteBatch batch,
+        BitmapFont font,
+        String texto,
+        float centroX,
+        float y,
+        float maxAncho
+    ) {
+        layout.setText(font, texto);
+
+        float escala = 1f;
+        if (layout.width > maxAncho) {
+            escala = maxAncho / layout.width;
+        }
+
+        font.getData().setScale(escala);
+        layout.setText(font, texto);
+
+        float x = centroX - layout.width / 2f;
+        font.draw(batch, layout, x, y);
+
+        font.getData().setScale(1f);
     }
 
-    @Override public void alRedimensionar(int ancho, int alto) { viewport.update(ancho,alto, true); }
+    @Override public void alRedimensionar(int ancho, int alto) { viewport.update(ancho, alto, true); }
     @Override public void alOcultar() {}
-    @Override public void liberar() { fuente.dispose(); }
+
+    @Override
+    public void liberar() {
+        // No liberar fuentes aquí (son compartidas y las libera Recursos.liberar()).
+    }
 }

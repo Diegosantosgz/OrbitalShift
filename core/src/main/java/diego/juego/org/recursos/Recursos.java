@@ -13,6 +13,8 @@ import diego.juego.org.estado.EstadoJuego;
  */
 public class Recursos {
 
+    public GestorFuentes fuentes;
+
     // Fondo parallax
     public Texture fondoMuyLejano;
     public Texture fondoLejano;
@@ -154,6 +156,11 @@ public class Recursos {
         sfxAntiGravedad = Gdx.audio.newSound(Gdx.files.internal("audio/efectos_sonido/sonido_esfera_antigravitacional.ogg"));
 
 
+        // Fuentes
+        fuentes = new GestorFuentes();
+        fuentes.cargar();
+
+
 
         pixelBlanco = crearPixelBlanco();
         textos = new Textos();
@@ -245,6 +252,11 @@ public class Recursos {
         liberarSfx(sfxRomperEscudo);
         liberarSfx(sfxCuracion);
         liberarSfx(sfxAntiGravedad);
+
+
+        if (fuentes != null) {
+            fuentes.liberar();
+        }
 
         textos = null;
 

@@ -27,16 +27,16 @@ public class EscenaNuevoRecord implements Escena {
     private final int score;
     private final Runnable onDone;
 
-    private final BitmapFont fuente = new BitmapFont();
-    private final GlyphLayout layout = new GlyphLayout();
+    private final BitmapFont fuenteTitulo;
+    private final BitmapFont fuenteNormal;
+    private final BitmapFont fuenteBoton;
+    private final GlyphLayout layout;
 
     private final Rectangle btnContinuar;
-
     private final StringBuilder iniciales = new StringBuilder(3);
 
     private boolean activo = false;
 
-    // ANDROID CONTROL
     private boolean esAndroid = false;
     private boolean esperandoDialogo = false;
     private boolean dialogoMostrado = false;
@@ -80,6 +80,11 @@ public class EscenaNuevoRecord implements Escena {
         this.gestor = gestor;
         this.score = score;
         this.onDone = onDone;
+
+        this.fuenteTitulo = recursos.fuentes.getTituloPeque();
+        this.fuenteNormal = recursos.fuentes.getNormal();
+        this.fuenteBoton = recursos.fuentes.getBoton();
+        this.layout = new GlyphLayout();
 
         float bw = 560f, bh = 120f;
         btnContinuar = new Rectangle((Main.ANCHO_MUNDO - bw) / 2f, 450f, bw, bh);
@@ -179,21 +184,12 @@ public class EscenaNuevoRecord implements Escena {
         batch.draw(recursos.pixelBlanco, 0, 0, Main.ANCHO_MUNDO, Main.ALTO_MUNDO);
         batch.setColor(1f, 1f, 1f, 1f);
 
-        fuente.getData().setScale(5.5f);
-        dibujarCentrado(batch, recursos.textos.t("newrecord_title"), 1500f);
-
-        fuente.getData().setScale(3.0f);
-        dibujarCentrado(batch, recursos.textos.t("newrecord_points", score), 1320f);
-
-        fuente.getData().setScale(3.4f);
-        dibujarCentrado(batch, recursos.textos.t("newrecord_initials", iniciales.toString()), 1100f);
-
-        fuente.getData().setScale(2.0f);
-        dibujarCentrado(batch, recursos.textos.t("newrecord_hint"), 920f);
+        dibujarCentrado(batch, fuenteTitulo, recursos.textos.t("newrecord_title"), 1500f);
+        dibujarCentrado(batch, fuenteNormal, recursos.textos.t("newrecord_points", score), 1320f);
+        dibujarCentrado(batch, fuenteNormal, recursos.textos.t("newrecord_initials", iniciales.toString()), 1100f);
+        dibujarCentrado(batch, fuenteNormal, recursos.textos.t("newrecord_hint"), 920f);
 
         dibujarBoton(batch, btnContinuar, recursos.textos.t("newrecord_continue"), true);
-
-        fuente.getData().setScale(1.0f);
     }
 
     private void dibujarBoton(SpriteBatch batch, Rectangle r, String texto, boolean primario) {
@@ -207,22 +203,51 @@ public class EscenaNuevoRecord implements Escena {
         batch.draw(recursos.pixelBlanco, r.x, r.y + r.height - 6f, r.width, 6f);
 
         batch.setColor(1f, 1f, 1f, 1f);
-        fuente.getData().setScale(2.4f);
 
-        layout.setText(fuente, texto);
-        float x = r.x + (r.width - layout.width) / 2f;
-        float y = r.y + (r.height / 2f) + (layout.height / 2f);
-        fuente.draw(batch, layout, x, y);
-
-        fuente.getData().setScale(1.0f);
+        dibujarTextoCentradoAjustado(
+            batch,
+            fuenteBoton,
+            texto,
+            r.x + r.width / 2f,
+            r.y + r.height / 2f + 18f,
+            r.width * 0.88f
+        );
     }
 
-    private void dibujarCentrado(SpriteBatch batch, String txt, float y) {
-        layout.setText(fuente, txt);
-        fuente.draw(batch, layout, (Main.ANCHO_MUNDO - layout.width) / 2f, y);
+    private void dibujarCentrado(SpriteBatch batch, BitmapFont font, String txt, float y) {
+        layout.setText(font, txt);
+        float x = (Main.ANCHO_MUNDO - layout.width) / 2f;
+        font.draw(batch, layout, x, y);
     }
 
-    @Override public void alRedimensionar(int ancho, int alto) { viewport.update(ancho,alto, true); }
+    private void dibujarTextoCentradoAjustado(
+        SpriteBatch batch,
+        BitmapFont font,
+        String texto,
+        float centroX,
+        float y,
+        float maxAncho
+    ) {
+        layout.setText(font, texto);
+
+        float escala = 1f;
+        if (layout.width > maxAncho) {
+            escala = maxAncho / layout.width;
+        }
+
+        font.getData().setScale(escala);
+        layout.setText(font, texto);
+
+        float x = centroX - layout.width / 2f;
+        font.draw(batch, layout, x, y);
+
+        font.getData().setScale(1f);
+    }
+
+    @Override
+    public void alRedimensionar(int ancho, int alto) {
+        viewport.update(ancho, alto, true);
+    }
 
     @Override
     public void alOcultar() {
@@ -233,6 +258,6 @@ public class EscenaNuevoRecord implements Escena {
 
     @Override
     public void liberar() {
-        fuente.dispose();
+        // No liberar fuentes aquí (son compartidas y las libera Recursos.liberar()).
     }
 }

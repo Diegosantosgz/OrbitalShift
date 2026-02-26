@@ -18,13 +18,18 @@ public class EscenaNivel2Intro implements Escena {
     private final Viewport viewport;
     private final GestorEscenas gestor;
 
-    private final BitmapFont fuente = new BitmapFont();
-    private final GlyphLayout layout = new GlyphLayout();
+    private final BitmapFont fuenteTitulo;
+    private final BitmapFont fuenteNormal;
+    private final GlyphLayout layout;
 
     public EscenaNivel2Intro(Recursos recursos, Viewport viewport, GestorEscenas gestor) {
         this.recursos = recursos;
         this.viewport = viewport;
         this.gestor = gestor;
+
+        this.fuenteTitulo = recursos.fuentes.getTituloPeque();
+        this.fuenteNormal = recursos.fuentes.getNormal();
+        this.layout = new GlyphLayout();
     }
 
     @Override
@@ -41,26 +46,23 @@ public class EscenaNivel2Intro implements Escena {
         batch.draw(recursos.pixelBlanco, 0, 0, Main.ANCHO_MUNDO, Main.ALTO_MUNDO);
         batch.setColor(1f, 1f, 1f, 1f);
 
-        fuente.getData().setScale(7f);
-        dibujarCentrado(batch, recursos.textos.t("level2_title"), 1450f);
-
-        fuente.getData().setScale(2.5f);
-        dibujarCentrado(batch, recursos.textos.t("level2_ready"), 1200f);
-        dibujarCentrado(batch, recursos.textos.t("level2_tap"), 950f);
-
-        fuente.getData().setScale(1.0f);
+        dibujarCentrado(batch, fuenteTitulo, recursos.textos.t("level2_title"), 1450f);
+        dibujarCentrado(batch, fuenteNormal, recursos.textos.t("level2_ready"), 1200f);
+        dibujarCentrado(batch, fuenteNormal, recursos.textos.t("level2_tap"), 950f);
     }
 
-    private void dibujarCentrado(SpriteBatch batch, String txt, float y) {
-        layout.setText(fuente, txt);
-        fuente.draw(batch, layout,
-            (Main.ANCHO_MUNDO - layout.width) / 2f,
-            y
-        );
+    private void dibujarCentrado(SpriteBatch batch, BitmapFont font, String txt, float y) {
+        layout.setText(font, txt);
+        float x = (Main.ANCHO_MUNDO - layout.width) / 2f;
+        font.draw(batch, layout, x, y);
     }
 
     @Override public void alMostrar() {}
-    @Override public void alRedimensionar(int ancho, int alto) { viewport.update(ancho,alto, true); }
+    @Override public void alRedimensionar(int ancho, int alto) { viewport.update(ancho, alto, true); }
     @Override public void alOcultar() {}
-    @Override public void liberar() { fuente.dispose(); }
+
+    @Override
+    public void liberar() {
+        // No liberar fuentes aquí (son compartidas).
+    }
 }

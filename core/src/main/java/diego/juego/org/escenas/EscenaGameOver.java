@@ -25,7 +25,9 @@ public class EscenaGameOver implements Escena {
     private final GestorEscenas gestorEscenas;
     private final int puntuacionFinal;
 
-    private final BitmapFont fuente;
+    private final BitmapFont fuenteTitulo;
+    private final BitmapFont fuenteNormal;
+    private final BitmapFont fuenteBoton;
     private final GlyphLayout layout;
 
     private final Rectangle btnReintentar;
@@ -37,17 +39,34 @@ public class EscenaGameOver implements Escena {
         this.gestorEscenas = gestorEscenas;
         this.puntuacionFinal = puntuacionFinal;
 
-        this.fuente = new BitmapFont();
+        this.fuenteTitulo = recursos.fuentes.getTituloPeque();
+        this.fuenteNormal = recursos.fuentes.getNormal();
+        this.fuenteBoton = recursos.fuentes.getBoton();
         this.layout = new GlyphLayout();
 
         float bw = 520f, bh = 120f;
         btnReintentar = new Rectangle((Main.ANCHO_MUNDO - bw) / 2f, 700f, bw, bh);
         btnSalir      = new Rectangle((Main.ANCHO_MUNDO - bw) / 2f, 540f, bw, bh);
     }
+    private void dibujarTextoCentradoConAncho(SpriteBatch batch, BitmapFont font, String texto, float centroX, float y, float maxAncho) {
+        layout.setText(font, texto);
+        float escala = 1f;
+
+        if (layout.width > maxAncho) {
+            escala = maxAncho / layout.width;
+        }
+
+        font.getData().setScale(escala);
+        layout.setText(font, texto);
+
+        float x = centroX - layout.width / 2f;
+        font.draw(batch, layout, x, y);
+
+        font.getData().setScale(1f);
+    }
 
     @Override
     public void alMostrar() {
-        // Si ya lo pedimos para ESTE score, no lo vuelvas a pedir
         if (EstadoJuego.yaSePidieronSiglasPara(puntuacionFinal)) return;
 
         if (EstadoJuego.entraEnTop10(puntuacionFinal)) {
@@ -68,8 +87,6 @@ public class EscenaGameOver implements Escena {
 
     @Override
     public void actualizar(float delta) {
-
-        // BACK / ESC -> volver al menú (en vez de cerrar el juego)
         if (Gdx.input.isKeyJustPressed(Input.Keys.BACK) || Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
             EstadoJuego.resetFlagsGameOver();
             EstadoJuego.nivelActual = 1;
@@ -89,7 +106,6 @@ public class EscenaGameOver implements Escena {
             return;
         }
 
-        // SALIR -> volver al menú (en vez de Gdx.app.exit())
         if (btnSalir.contains(v.x, v.y)) {
             EstadoJuego.resetFlagsGameOver();
             EstadoJuego.nivelActual = 1;
@@ -116,7 +132,6 @@ public class EscenaGameOver implements Escena {
 
         batch.setColor(1f, 1f, 1f, 1f);
 
-        // === TEXTOS I18N ===
         String tTitle  = recursos.textos.t("gameover_title");
         String tScore  = recursos.textos.t("gameover_score", puntuacionFinal);
         String tRecord = recursos.textos.t("gameover_record", EstadoJuego.getRecord());
@@ -124,22 +139,24 @@ public class EscenaGameOver implements Escena {
         String tExit   = recursos.textos.t("gameover_exit");
         String tHint   = recursos.textos.t("gameover_hint");
 
-        fuente.getData().setScale(7.0f);
-        dibujarTextoCentrado(batch, tTitle, Main.ANCHO_MUNDO / 2f, panelY + panelH - 140f);
+        dibujarTextoCentradoConAncho(
+            batch,
+            fuenteTitulo,
+            tTitle,
+            Main.ANCHO_MUNDO / 2f,
+            panelY + panelH - 140f,
+            panelW * 0.90f
+        );
 
-        fuente.getData().setScale(3.2f);
-        dibujarTextoCentrado(batch, tScore,  Main.ANCHO_MUNDO / 2f, panelY + panelH - 250f);
-        dibujarTextoCentrado(batch, tRecord, Main.ANCHO_MUNDO / 2f, panelY + panelH - 320f);
+        dibujarTextoCentrado(batch, fuenteNormal, tScore,  Main.ANCHO_MUNDO / 2f, panelY + panelH - 250f);
+        dibujarTextoCentrado(batch, fuenteNormal, tRecord, Main.ANCHO_MUNDO / 2f, panelY + panelH - 320f);
 
         dibujarBoton(batch, btnReintentar, tRetry, true);
         dibujarBoton(batch, btnSalir,      tExit,  false);
 
-        fuente.getData().setScale(1.6f);
         batch.setColor(1f, 1f, 1f, 0.75f);
-        dibujarTextoCentrado(batch, tHint, Main.ANCHO_MUNDO / 2f, panelY + 90f);
-
+        dibujarTextoCentrado(batch, fuenteNormal, tHint, Main.ANCHO_MUNDO / 2f, panelY + 90f);
         batch.setColor(1f, 1f, 1f, 1f);
-        fuente.getData().setScale(1.0f);
     }
 
     private void dibujarBoton(SpriteBatch batch, Rectangle r, String texto, boolean primario) {
@@ -155,18 +172,52 @@ public class EscenaGameOver implements Escena {
         batch.draw(recursos.pixelBlanco, r.x + r.width - 6f, r.y, 6f, r.height);
 
         batch.setColor(1f, 1f, 1f, 1f);
-        fuente.getData().setScale(2.2f);
-        dibujarTextoCentrado(batch, texto, r.x + r.width / 2f, r.y + r.height / 2f + 22f);
-        fuente.getData().setScale(1.0f);
-    }
 
-    private void dibujarTextoCentrado(SpriteBatch batch, String texto, float centroX, float y) {
-        layout.setText(fuente, texto);
+        // Texto centrado y autoajustado al ancho del botón
+        dibujarTextoCentradoAjustado(
+            batch,
+            fuenteBoton,
+            texto,
+            r.x + r.width / 2f,
+            r.y + r.height / 2f + 18f,
+            r.width * 0.88f
+        );
+    }
+    private void dibujarTextoCentradoAjustado(
+        SpriteBatch batch,
+        BitmapFont font,
+        String texto,
+        float centroX,
+        float y,
+        float maxAncho
+    ) {
+        layout.setText(font, texto);
+
+        float escala = 1f;
+        if (layout.width > maxAncho) {
+            escala = maxAncho / layout.width;
+        }
+
+        font.getData().setScale(escala);
+        layout.setText(font, texto);
+
         float x = centroX - layout.width / 2f;
-        fuente.draw(batch, layout, x, y);
+        font.draw(batch, layout, x, y);
+
+        font.getData().setScale(1f);
     }
 
-    @Override public void alRedimensionar(int ancho, int alto) { viewport.update(ancho,alto, true); }
+    private void dibujarTextoCentrado(SpriteBatch batch, BitmapFont font, String texto, float centroX, float y) {
+        layout.setText(font, texto);
+        float x = centroX - layout.width / 2f;
+        font.draw(batch, layout, x, y);
+    }
+
+    @Override public void alRedimensionar(int ancho, int alto) { viewport.update(ancho, alto, true); }
     @Override public void alOcultar() { }
-    @Override public void liberar() { fuente.dispose(); }
+
+    @Override
+    public void liberar() {
+        // No liberar fuentes aquí (son compartidas y las libera Recursos.liberar()).
+    }
 }
