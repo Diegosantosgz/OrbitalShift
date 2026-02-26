@@ -98,7 +98,7 @@ public class EscenaJuego implements Escena {
     // JUGADOR
     private float x, y;
     private float velocidad = 500f;
-    private float escala = 0.10f;
+    private float escala = 0.12f;
 
     private Rectangle limitesJugador;
     // ===== ANTIGRAVITACIONAL (ITEM) =====
@@ -460,8 +460,9 @@ public class EscenaJuego implements Escena {
             dx = controlPad.getDx();
             dy = controlPad.getDy();
 
-            x += dx * 650f * delta;
-            y += dy * 650f * delta;
+            // Sensibilidad de la nave (multitouch)
+            x += dx * 550f * delta;
+            y += dy * 550f * delta;
 
         } else {
             // acelerómetro / teclado
